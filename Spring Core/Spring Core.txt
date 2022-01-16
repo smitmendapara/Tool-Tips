@@ -1,0 +1,50 @@
+-------------------------------------------- Spring Core ----------------------------------------
+
+Dependency Injection : One object depends on other object. ex. car, bike and vehicle
+Bean : Bean is an object that is manage by IoC container.
+IoC : Inverse of Control
+      IoC is a framework for implementing automatic dependency injection.
+      It is also manage creation of object for life time's and also inject dependency to the class.
+      IoC inverts the flow of control as compared to traditional control flow.
+
+2 types of configuration : 1. using xml file
+			   2. using annotation
+
+ApplicationContext context = new ClassPathXmlApplictionContext("spring.xml"); // for xml file configuration
+Vehicle Obj = (Vehicle) context.getBean("vehile"); 
+
+spring.xml : <beans>
+		<bean id="vehicle" class="full name with package"></bean>
+	     </beans>
+
+ApplicationContext context = new AnnotationConfigApplictionContext("Config.java"); // for java file for configuration
+Vehicle Obj = (Vehicle) context.getBean(class name);
+
+Config.java : @Configuration
+	      pulic Class Config {
+	           
+		   @Bean
+		   public Samsung getPhone() {
+			
+			return new Samsung();		
+	 	   } 
+	      }
+
+@Component (will getting by default class object) annotation define to class
+
+Bean Property      : it is used to set value in xml file.
+(Setter injection)   <beans>
+		        <property name="brand" value="Ceat"></property>
+	             </beans>
+
+Constructor injection : to create constructor in class and set value in xml file.
+			<constructor-arg value="Ceat"></constructor-arg>
+
+Autowired Injection : it is annotation to define object.
+		      when we need object of other class in our class so we can use autowired it gives a object via xml file.
+		      @Autowired
+	              myCar car; // myCar is class name
+	              System.out.println(car);
+
+
+Annotation : @Component, @Autowired, @Configuration, @Bean, @ComponentScan, @Primary

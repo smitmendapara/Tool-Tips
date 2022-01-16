@@ -1,0 +1,40 @@
+-------------------------------------- JavaScript ----------------------------------------
+
+Object  : collection of name value pairs.(Window is a Global Object)
+example : var person = {
+			fName : "abc",
+			lName : "xyz",
+			fullName : function(){
+				return this.fName + " " + this.lName;
+			}
+		  };
+	  	  var a = Object.create(Person);
+	      var a = new Object();
+	  	  a.fName = "abc";
+	      a.lName = "xyz";
+Access Element : person.fName, person[fName] or also use getter and setter 
+
+Prototype : add properties and function(method) to a object or function constructor.
+example  : Person.prototype.nationality = "indian";
+	        String.prototype.nationality = function(limit){
+	     		return this.length > limit;
+	        }
+	   		console.log("abc".nationality(2));
+			Date objects inherit from Date.prototype
+			Array objects inherit from Array.prototype
+			Person objects inherit from Person.prototype
+
+call & apply : it is used for inherit one object value to another object.
+			   only difference is argument pass in array format in apply.
+example : person.fullName.call(person2, "abc", "xyz");
+		  person.fullName.apply(person2, ["abc", "xyz"]);
+
+closures : when outer function is call and hold some value and then call inner function 
+		   and use outer function variable value is called closures.
+example : function a(name){
+		      return function(item) {
+				  console.log(name + " " + item);
+			  }	
+		  }
+		  var ans = a();
+		  ans(); 

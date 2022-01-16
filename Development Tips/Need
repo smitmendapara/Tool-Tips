@@ -1,0 +1,27 @@
+-------- Put live website on github --------------
+
+1. Desktop for windows/macos/linux
+2. Create repository
+
+----------- Send Email for Portfolio -------------
+
+1. First need to add lib of smtp into html file within script tag
+2. set event on button for submit data
+3. set all the property which is required for mail
+
+	------------------------------ Example Start ----------------------------
+
+	function sendEmail(name, email, projectTitle, message) {
+	    Email.send({
+	        Host: "smtp.gmail.com",
+	        Username: 'smitmendapara0910@gmail.com',
+	        Password: "lqcskxowquvycvvx",
+	        To: "smitmendapara0910@gmail.com",
+	        From: "smitmendapara0910@gmail.com",
+	        Subject: `${name} sent you a message`,
+	        Body: `Name: ${name}  <br/> Email: ${email} <br/> Project: ${projectTitle} <br/> Message: ${message}`,
+	    }).then((message) => alert("Your request sent successfully!"));
+	}
+
+	------------------------- Example End -------------------------------
+

@@ -1,0 +1,50 @@
+-------------------- Spring Boot ------------------------
+
+@Autowired - for create object of another class in our class
+@Autowired
+Car car;
+
+@Component - it will be given by default object of particular class
+@Component
+public class Book {}
+
+@Configuration - to declare that class is configuration class
+@Configuration
+public class Book {}
+
+@EnableAutoConfiguration - when we want dependency is auto enable that dependency
+
+@ComponentScan - we use the @ComponentScan annotation along with @Configuration annotation to specify the packages that we want to be scanned
+
+@SpringBootApplication - it is combination of @Configuration, @EnableAutoConfiguration and @ComponentScan 
+
+@Controller - it is used for controller class
+@Controller
+public class Book {}
+
+@RequestMapping - for mapping any method to define url in the annotaion
+@RequestMapping("/detail")
+public String getDetail() { return "hello" }
+
+@ResponseBody - it is used for return as a string in output
+@ResponseBody
+public String getDetail() { return "hello" }
+	
+@Query - for JPQL and SQL query
+@Param - for binding query value with parameter value
+
+API Annotation :
+@RestController 
+@GetMapping
+@PostMapping
+@DeleteMapping
+@PutMapping
+
+@PathVariable - for binding mapping value with parameter value
+@RequestBody - for convert object to JSON and JSON to object
+
+@Valid - it is used for method parameter or method return type validation
+@ModelAttribute - it is used for binds method parameter or method return value to a named model attribute
+
+EmailService 
+eljllsaqjvsyxwby

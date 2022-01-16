@@ -1,0 +1,262 @@
+//simple
+document.getElementById("demo").style.fontSize
+document.getElementById("demo").style.color
+document.getElementById("demo").src
+document.getElementById("demo").innerHTML
+document.getElementById("demo").attribute = new value
+or
+document.getElementById("demo").setAttribute(attribute, value);
+document.getElementById("demo").innerHTML
+document.getElementById("demo").style.display
+document.getElementById("demo").onclick = function() {code}
+document.getElementsByClassName(tagname);
+document.getElementsByTagName(classname);
+
+//adding and removing elements
+document.createElement(element)
+document.removeElement(element)
+document.appendElement(element)
+document.replaceElement(new, old)
+document.write(text)
+
+//camelcase lower
+lastName
+
+//camelcase upper
+LastName
+
+//operator
+x ** y or Math.pow(x, y)
+=== equal value and equal type
+!== not equal value or not equal type
+? ternary operator
+^ xor
+
+//string method
+length
+indexOf()
+lastIndexOf()
+search()
+slice()
+substring()
+substr()
+replace()
+trim()
+concat()
+toUpperCase()
+toLowerCase()
+charAt()
+charCodeAt()
+split() for converting string to array
+toString()
+
+//number method
+toExponential()
+toFixed()
+toPrecision()
+valueOf()
+Number()
+parseInt()
+parseFloat()
+MAX_VALUE
+MIN_VALUE
+POSITIVE_INFINITY
+NEGATIVE_INFINITY
+
+//array method
+Array.isArray(arrayname)
+join()
+push()
+pop()
+splice()
+shift()
+unshift()
+delete arrayname[index] for delete specific array index value
+
+//array sort
+sort()
+sort(function(a-b){return a - b;})
+forEach()
+map()
+filter()
+every()
+some()
+find()
+findIndex()
+
+//dates
+toString()
+toUTCString()
+toDateString()
+toISOString()
+Date.parse()
+
+//get method
+getFullYear()
+getTime()
+getMonth()
+getDate()
+getSeconds()
+getMilliseconds()
+getDay()
+getMinutes()
+getHours()
+
+//set method
+setFullYear()
+setMonth()
+setHours()
+setSeconds()
+setDay()
+setMinutes()
+setMilliseconds()
+setTime()
+
+//math function
+PI
+sqrt()
+round()
+pow()
+ciel()
+floor()
+min()
+max()
+sin()
+sinh() hyperbolic
+asinh() hyperbolic arctangle
+cos()
+cosh()
+acosh()
+tan()
+tanh()
+atanh()
+abs()
+exp()
+log()
+random()
+trunc()
+
+//bitwise
+return (dec >>> 0).toString(2);
+return parseInt(bin, 2).toString(10);
+
+//regular expression
+/abc/i for insensitive
+/abc/g for global match
+match()
+/abc/m for multiple line match
+/[abc]/g
+/[0-9]/g
+/(x|y)/g
+/\d/g for digit
+/\s/g for whitespace
+/\b/g for word (\bWORD or WORD\b)
+/n+/g for atlest one match of n in string word
+/n*/g for zero or more match
+/n?/g for zero or one match 
+/anyword/.test()
+
+//error
+TypeError
+ReferenceError
+SyntaxError
+RangeError
+URIError decodeURI()
+
+//this keyword
+apply()
+call() object1.methodname.call(object2)
+
+//class
+constructor(){}
+
+//version
+isInteger()
+isSafeInteger()
+MIN_SAFE_INTEGER
+MAX_SAFE_INTEGER
+isFinite()
+isNaN()
+
+//form
+checkValidity()
+validationMessage
+validity
+willValidate
+
+//validation property
+rangeUnderflow
+rangeOverflow
+valueMissing
+typeMismatch
+stepMismatch
+patternMismatch
+customError
+
+//getter and setter
+get methodName(){}
+set methodName(value){}
+
+//object constructor
+constructor function for object
+
+//object prototype
+inherite property value 
+Object.defineProperty(object, property, {value : value})
+
+//function
+arguments.length
+
+//finding html object
+document.script
+document.images
+document.head
+document.anchors
+document.link
+document.URL
+document.form
+document.body
+document.title
+document.domain
+document.inputEncoding
+
+//asynchronous
+callback()
+setTimeout(function name, time) or setTimeout(myFunction, 4000)
+setInterval(function name, time)
+
+//event
+onclick
+onload 
+onunload
+onfocus
+onmouseover
+onmouseout
+onmousedown
+onmouseup
+
+//eventlistener
+addEventListener()
+removeEventListener()
+
+//eventname
+click
+resize
+mousedown
+mouseup
+mouseover
+mouseout
+mousemove
+
+//propogation
+bubblng
+capturing
+
+//root nodes
+document.body.innerHTML
+document.documentElement.innerHTML
+
+//node property
+nodeName
+nodeValue
+nodeType

@@ -1,0 +1,19 @@
+------------------------- Smart Contact Manager ----------------------------
+
+Technology : Spring Boot
+	     Spring MVC
+	     JPA-Hibernate
+	     Thymeleaf
+	     Spring Security 
+	     MySQL
+
+Tool : SpringToolSuite4
+
+User Management : Register
+		  Login
+		  Logout
+
+Contact Management : Show Contacts
+		     Update Contacts
+		     Search Contacts
+		     Add Contacts

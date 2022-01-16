@@ -1,0 +1,212 @@
+-------------------------------- Spring Boot ------------------------------------
+
+1. create project using maven in eclipse
+2. create project using spring initializer
+3. create project using spring tool suite
+4. create project usig command
+
+=> another way to download sts plugin in eclipse to create project
+=> best powerfull tool is sts for spring boot it gives you suggestion(proposal) for code.
+
+JSP View : 
+=> create project then create folder webapp in main and then create another folder in webapp is views.
+=> create controller in src/main file it will return jsp pages.
+=> define prefix and suffix in application.properties file.
+
+application.properties :
+=> all value is in key value pairs in this file.
+=> this file gives you to customize predefine application properties like port number.
+=> used for change the properties.
+
+CRUD operations :
+=> we can perform create, read, update and delete operation using extends CRUDRepository interface in UserRepository interface.
+
+Custom finder method / Derived query method :
+=> we can create our own method in interface where we extends CRUDRepository class.
+=> CRUDRepository provide by default method like findById, findByAllId, findAll etc....
+=> so, we want to fetch data from database like findByName, findByAge, findByCity etc... we create custom our own method.
+=> ex. public List<User> findByName (String name) like select * from User where name = ?
+=> also use operator between properties.
+=> ex. public List<User> findByNameAndCity (String name, String city) like select * from User where name = ? and city = ?
+=> operator list : https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#reference
+
+    // Custom methods or derived query methods
+    public List<User> findByName (String name);
+    public List<User> findByNameAndCity (String name, String city);
+	    
+JPQL and native query(sql query) : 
+=> JPQL stands for java persistence query language like HQL.
+=> @Query and @Param Annotation is use in JPQL.
+=> used for execute query.
+
+    // JPQL and native query language
+	
+    // JPQL
+    @Query("select u from User u")
+    public List<User> getAllUser();
+	
+    @Query("select u from User u where u.id =:n")
+    public List<User> findById (@Param("n") int id);
+	
+    // native query (SQL query)
+    @Query(value = "select * from User", nativeQuery = true)
+    public List<User> getUser();
+	
+    @Query(value = "select * from User where id =:i", nativeQuery = true)
+    public List<User> findId (@Param("i") int id);
+
+API : 
+=> it is set of rule that allow to talk to program each other.
+=> developer create api on the server and allows the client to talk to it. 
+=> api is nothing but set of function.
+
+REST API : 
+=> Reprentational State Transfer 
+=> it is set of constraints to be used for creating web services.
+   1. Client Server - need to client and server
+   2. Stateless - dont save any request of client
+   3. Cacheble - cache properties are true so, performance is increase
+   4. Layered - request go to server or proxy server
+
+HTTP Request : GET - it reads the resource
+	       POST - it creates the resource
+	       DELETE - it deletes the existing resource
+	       PUT - it updates the resource
+
+How to Pass URL : 
+=> /detail for all resource
+=> /detail/1 for one resource where id=1
+
+DevTools : 
+=> it is used for improve devloping time.
+=> it can auto-refresh server when we change any data in application.
+   1. Property default - cache property is false
+   2. Automatic restart
+   3. Live Reload  
+
+Controller Class : 
+=> it is handler class
+=> it is handle the request of client and process it
+
+    @Autowired
+    private BookService bookService;
+
+    @GetMapping("/detail")
+    public List<Book> getDetails() {
+
+        return this.bookService.getAllBook();
+    }
+
+    @GetMapping("/detail/{id}")
+    public Book getBookById(@PathVariable("id") int id) {
+        return bookService.getBookById(id);
+    }
+
+    @PostMapping("/detail")
+    public Book addBook(@RequestBody Book book) {
+        Book b = this.bookService.createBook(book);
+        return b;
+    }
+
+    @DeleteMapping("/detail/{id}")
+    public void deleteBook(@PathVariable("id") int id) {
+        this.bookService.removerBook(id);
+    }
+
+    @PutMapping("/detail/{id}")
+    public Book updateBook(@RequestBody Book book, @PathVariable("id") int id) {
+        this.bookService.changeBook(book, id);
+        return book;
+    }
+
+BookService Class : 
+=> it is fack service class for creating list of book not iteract with database
+
+    private static List<Book> list = new ArrayList<>();
+    static {
+        list.add(new Book(1, "abc", "delhi"));
+        list.add(new Book(2, "xyz", "delhi"));
+        list.add(new Book(3, "lmn", "kolkata"));
+    }
+
+    // get all books
+    public List<Book> getAllBook() {
+
+        return list;
+    }
+
+    // get one book by id
+    public Book getBookById(int id) {
+
+        Book book = null;
+        book = list.stream().filter(e -> e.getId() == id).findFirst().get();
+        return book;
+    }
+
+    // create book object
+    public Book createBook(Book b) {
+
+        list.add(b);
+        return b;
+    }
+
+    // delete book by id
+    public void removerBook(int id) {
+        list = list.stream().filter(e -> e.getId() != id).collect(Collectors.toList());
+    }
+
+    // update book by id
+    public void changeBook(Book b, int id) {
+        list = list.stream().map(e -> {
+            if (e.getId() == id) {
+                e.setName(b.getName());
+                e.setCity(b.getCity());
+            }
+            return e;
+        }).collect(Collectors.toList());
+    }
+
+=> automatic configure jackson dependency by spring boot.
+=> it can convert object to JSON format and JSON format to object.
+
+Connect Database : 
+=> configure all  property of your database.
+=> with using JPA so, define entity class and create one repository class that is interact with database.
+
+Mapping Relation :
+=> one class map to other class using annotation.
+=> many relation exits between two classes @OneToOne, @OneToMany, @ManytoOne, @ManyToMany
+=> also used mappedBy property.
+=> unidirectional and bidirectional with jackson @JsonManageReference and @JsonBackReference 
+
+File Uploading : 
+=> upload file in specific folder name static and in static image folder.
+=> create one controller for upload file and one helper for upload directory and upload file.
+=> where system is chaged so, directory is not working so dynamically we can upload the file.
+=> using ClassPathResource class
+=> with return current file path so, we can use 
+	ServletUriComponentsBuilder.fromCurrentContextPath().path("/image/").path(file.getOriginalFilename()).toUriString()) 
+
+Thymeleaf :
+=> Thymeleaf is a Java XML/XHTML/HTML5 template engine that can work both in web and non-web environments.
+=> it is powerful framework.
+=> it is used with html and in html file when thymeleaf contain display in html file thymleaf engine handle that code and give appropriate output.
+=> syntax : <h1>value of n is <span th:text="${n}"></span></h1>
+=> where th is thymeleaf
+
+Iteration in Thymeleaf :
+=> it is used for no. of iteration for list, array etc... 
+=> syntax : <ul>
+		<li th:each="n : ${names}">
+		    <span th:text="${n}"></span>
+		</li>
+	    </ul>
+=> each attribute also provide status variable and status variable provide index, count, even & odd, first & last and size of list.
+=> syntax : <ul>
+		<li th:each="n, status : ${names}">
+		    <span th:style="${status.odd} ? 'color: red' : 'color: black'" th:text="${status.index}" + "${n}"></span>
+		</li>
+	    </ul> 
+=> elvis operator like ternary operator, if and unless like if and else condition and switch case like switch case statement.
+=> how to find length of string : ${#strings.length(names)} strings for string method
+				  ${#lists.size(mylist)} lists for list method
