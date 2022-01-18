@@ -1,0 +1,41 @@
+----------------------------------- error -----------------------------------
+
+-> type cast error can not be converted into ArrayList of HashMap (change data type)
+
+-> data conversion error (sql take string value in single qoute)
+
+-> unsupported mvcc setting in database url (mvcc=false to remove mvcc and clean project -> clean compile package)
+
+-> not print resultSet so use string for that solution
+
+----------------------------------- good practice ---------------------------
+
+-> write code in try catch block instead use of throws keyword
+
+-> mostly create class within package
+
+-> give variable, object, class name properly meaning full like data or resultSet, __logger, DataAccess 
+
+-> mostly prefer initialize variables to initially
+
+-> define default contructor when we define parameterise constructor
+
+-> give one task for one function
+
+
+
+"<tr class=\"disc__data\">" + "<td><input type=\"checkbox\"></td>" + "<td>one</td>" + "<td>0</td>" + "<td>two</td>" + "<td>three</td>" + "</tr>";
+
+String string = "<tr class=\"disc__data\">\n" +
+                "\n" +
+                "                                <td><input type=\"checkbox\"></td>\n" +
+                "\n" +
+                "                                <td>one</td>\n" +
+                "\n" +
+                "                                <td>0</td>\n" +
+                "\n" +
+                "                                <td>two</td>\n" +
+                "\n" +
+                "                                <td>three</td>\n" +
+                "\n" +
+                "                            </tr>";

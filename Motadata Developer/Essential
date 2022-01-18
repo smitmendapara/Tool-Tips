@@ -1,0 +1,70 @@
+-> Server: sftp://172.16.8.139/motadata/motadata
+
+-> ./nsqlookupd -tcp-address/-http-address/-broadcast-address 
+
+-> ./nsqd -tcp-address/-lookupd-tcp-address/-http-address/-broadcast-address -max-msg-size/-max-rdy-count/-mem-queue-size/-msg-timeout
+
+-> ./nsqadmin --lookupd-http-address=localhost:4161&
+
+-> nsq_to_file --topic=test --output-dir=/tmp --lookupd-http-address=127.0.0.1:4161
+
+-> ./nsqlookupd -tcp-address localhost:4160 -http-address localhost:4161 -broadcast-address locahost
+
+-> ./nsqd -tcp-address localhost:4150 -lookupd-tcp-address localhost:4160 -http-address localhost:4151 -broadcast-address localhost -max-msg-size
+   5123840 -max-rdy-count 10000 -mem-queue-size 10000 -msg-timeout 120s
+
+-> chmod -R 777 apache-tomcat-9.0.55 (for set the permission for the any server)
+
+-> jdbc:h2:tcp://localhost/configdb;DATABASE_TO_UPPER=false;IGNORECASE=TRUE;MODE=PostgreSQL;AUTO_RECONNECT=TRUE;AUTO_SERVER=TRUE;MV_STORE=FALSE;MVCC=FALSE (database url)
+-> jdbc:h2:tcp://172.16.8.139/configdb;DATABASE_TO_UPPER=false;IGNORECASE=TRUE;MODE=PostgreSQL;AUTO_RECONNECT=TRUE;AUTO_SERVER=TRUE;MV_STORE=FALSE;MVCC=FALSE (motadata url)
+
+
+-> manual start h2 databse server : Server server = Server.createTcpServer("baseDir", currentBaseDir, "-tcpAllowOthers");
+
+-> with the help of command : java -jar h2-1.4.192.jar -webAllowOthers -tcpAllowOthers -baseDir /home/smit/Downloads/Database/h2/
+
+-> bundle-version always 1.0
+
+-> Just add a single "." before the name of your database. For example this is the jdbc url for my database: jdbc:h2:tcp://localhost:9101/~/test and I'll change it to this to work:     
+   jdbc:h2:tcp://localhost:9101/~./test. I've read in a forum that this bug relates to H2.
+
+-> /home/smit/Documents/JDK/jdk/bin/java -server -jar /home/smit/Documents/Server/Jetty/jetty-distribution-9.4.44.v20210927/start.jar -jetty.http.port=8080
+
+-> /home/smit/Documents/Server/Jetty/jetty-distribution-9.4.44.v20210927/start.jar -jetty.http.port=8080
+
+-> java -server -Xms512 -Xmx512 -XX:+UseCompressedOops -XX:+UseParallelOldGC -XX:+AggressiveOpts -Dio.netty.allocator.type=unpooled -Dio.netty.noPreferDirect=true -d64 -jar /home/smit/     
+   Documents/Server/Jetty/jetty-distribution-9.4.44.v20210927/start.jar jetty.http.port=8080
+
+-> java -jar /home/smit/Documents/Server/Jetty/jetty-distribution-9.4.44.v20210927/start.jar (at the jetty server directory)
+
+-> kill -9 15854
+
+-> netstat -anp | grep ":8080"
+
+-> ll or ls
+
+-> less start.ini (for description and upadated rules)
+
+-> sudo apt-get terminator (check)
+
+-> sudo apt-get install terminator (install)
+
+-> terminator (run)
+
+-> ps aux | grep nsq
+
+-> sudo apt update
+-> sudo apt-get install sublime-text
+-> sudo apt install git
+
+-> CountDownLatch class isused for started nsq server using mutithreading
+
+-> COMMONCONSTANT CLASS
+
+-> SELECT, INSERT, UPDATE, DELETE
+
+-> InetAdress also used for ping
+
+-> SSH connection with Java using two of the available Java libraries – JSch and Apache Mina SSHD
+
+-> for VPN download forticlient ssl and the create new connection with office name and enter all the details
