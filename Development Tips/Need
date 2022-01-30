@@ -25,3 +25,22 @@
 
 	------------------------- Example End -------------------------------
 
+-------------------- Put code into github from intellij idea --------------------------------
+
+1. open VCS in intellij idea
+2. import into version control
+3. share project on github 
+4. provide credentials and login
+5. push and commit file
+
+-------------------- Put code into git from intellij idea --------------------------------
+
+1. open VCS in intellij idea
+2. enable version control
+3. select git option
+4. press alt + 9
+5. browse unresolved file
+6. select and press right click on it
+7. add to VCS
+8. show your default (we can set directory by)
+9. either commit or revert
