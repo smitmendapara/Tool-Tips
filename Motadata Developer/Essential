@@ -16,6 +16,7 @@
 -> chmod -R 777 apache-tomcat-9.0.55 (for set the permission for the any server)
 
 -> jdbc:h2:tcp://localhost/configdb;DATABASE_TO_UPPER=false;IGNORECASE=TRUE;MODE=PostgreSQL;AUTO_RECONNECT=TRUE;AUTO_SERVER=TRUE;MV_STORE=FALSE;MVCC=FALSE (database url)
+
 -> jdbc:h2:tcp://172.16.8.139/configdb;DATABASE_TO_UPPER=false;IGNORECASE=TRUE;MODE=PostgreSQL;AUTO_RECONNECT=TRUE;AUTO_SERVER=TRUE;MV_STORE=FALSE;MVCC=FALSE (motadata url)
 
 
@@ -32,6 +33,8 @@
 
 -> /home/smit/Documents/Server/Jetty/jetty-distribution-9.4.44.v20210927/start.jar -jetty.http.port=8080
 
+-> java -server -jar /home/smit/Documents/Server/Jetty/jetty-distribution-9.4.44.v20210927/start.jar -jetty.https.port=8080
+
 -> java -server -Xms512 -Xmx512 -XX:+UseCompressedOops -XX:+UseParallelOldGC -XX:+AggressiveOpts -Dio.netty.allocator.type=unpooled -Dio.netty.noPreferDirect=true -d64 -jar /home/smit/     
    Documents/Server/Jetty/jetty-distribution-9.4.44.v20210927/start.jar jetty.http.port=8080
 
@@ -41,7 +44,11 @@
 
 -> netstat -anp | grep ":8080"
 
+-> lsof -n -i :1099
+
 -> ll or ls
+
+-> sudo vim known_hosts
 
 -> less start.ini (for description and upadated rules)
 
@@ -53,9 +60,20 @@
 
 -> ps aux | grep nsq
 
+-> jps
+
+-> jstack > file.tdump
+
+-> netstat -nt | grep ":22"
+
 -> sudo apt update
 -> sudo apt-get install sublime-text
 -> sudo apt install git
+
+-> ssh -v root@172.16.8.182
+-> ssh root@172.16.8.182
+-> systemctl ssh status
+-> vim /etc/ssh/ssh_config
 
 -> CountDownLatch class isused for started nsq server using mutithreading
 
@@ -68,3 +86,5 @@
 -> SSH connection with Java using two of the available Java libraries – JSch and Apache Mina SSHD
 
 -> for VPN download forticlient ssl and the create new connection with office name and enter all the details
+
+-> clear in performance for near red button

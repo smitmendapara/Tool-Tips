@@ -1,3 +1,5 @@
+---------------------------------------------------------------- Work Flow -----------------------------------------------------------------------
+
 -> one ui & maven project
 
 -> In the ui project I created one jsp file and also web.xml and struts-congif.xml file for mapping with jetty or tomcat configuration.
@@ -34,310 +36,116 @@
 
 -> jar file -> h2, google-http-client
 
--> IOUtils provide utility methods for reading, writing and copying files. The methods work with InputStream, OutputStream, Reader and Writer. 
+-> IOUtils provide utility methods for reading, writing and copying files. The methods work with InputStream, OutputStream, Reader and Writer.
 
--> 172.16.8.182
--> user - root
--> pass - motadata
+-> Date and Calender class used for time in time series bar char
 
------------------------------------------------- sql queries --------------------------------------------
+-> TimeStamp class is used for getting current time at a discovery and monitoring.   
+
+------------------------------------------------------- Server -------------------------------------------------------
+
+-> 45.116.206.194
+
+-> 122.170.103.210
+
+-> ssh root@172.16.8.182
+
+-> ssh osboxes@172.16.11.100
+
+-------------------------------------------------------- Linux Command ------------------------------------------------------
+
+-> uname
+
+-> uname -a
+
+-> uname -m
+
+-> uname -r
+
+-> free - memory data
+
+-> iostat - cpu data
+
+-> df -h - disk data
+
+-> top -H - thread data
+
+---------------------------------------------------------- Error ------------------------------------------------------------------
+
+-> type cast error can not be converted into ArrayList of HashMap (change data type)
+
+-> data conversion error (sql take string value in single qoute)
+
+-> unsupported mvcc setting in database url (mvcc=false to remove mvcc and clean project -> clean compile package)
+
+-> not print resultSet so use string for that solution
+
+-> channel not connected (timeout : 20) 
+
+-> The Channel.connect() call usually returns in under 100 ms, but when this error ocurrs the call hangs for more than 20 seconds before throwing the exception. (timeout : 30)
+
+-> socket not established (vpn is not connected either ssh is now working in terminal)
+
+-> null pointer exception (method parameter take null value at a calling time)
+
+-> horg.h2.jdbc.JdbcSQLException: Connection is broken: "java.net.ConnectException: Connection refused (Connection refused): localhost"
+
+-> Unable to load configuration. - action - file:/home/smit/IdeaProjects/nms_ui/target/nms_ui/WEB-INF/classes/struts.xml:87:90
+
+-> Unsupported connection setting &quot;MVCC&quot; [90113-200] 90113/90113 (check your jar path in project structure)
+
+-> com.jcraft.jsch.JSchException: UnknownHostKey: 172.16.8.68. RSA key fingerprint is f0:5b:86:bb:91:66:ec:90:f7:d5:48:80:ce:3a:10:e9
+
+------------------------------------------------------------------ SQL Queries --------------------------------------------------------
 
 -> CREATE TABLE TB_MONITOR(ip varchar(20), response varchar(20), username varchar(20), password varchar(20), device varchar(20));
+
 -> create table TB_DISCOVER(Id int, Name varchar(20), IP varchar(20), Username varchar(20), Password varchar(20), Device varchar(10), Response varchar(300), Status varchar(10));
--> create table TB_MONITOR(Id int NOT NULL UNIQUE, IP varchar(20), Profile varchar(20), DeviceType varchar(20))
+
+-> create table TB_MONITOR(Id int, Name varchar(20), IP varchar(20), Profile varchar(20), DeviceType varchar(10), Response varchar(300), Status varchar(10), CurrentTime varchar(40));
+
+-> create table TB_RESULT(Id int, IP varchar(20), Profile varchar(20), DeviceType varchar(20), Response varchar(300));
+
+-> INSERT INTO TB_MONITOR VALUES (30, 'Trial', '127.0.0.1234', 'admin', 'admin', 'Linux', '[Linux, ubuntu, x86_64, 8174812, 4935904, 1205740, 4.4.0-131-generic, GNU/Linux, 7999484, 109220, 7890264, 31, 
+
+   1.70, 1.87]', 'Up', '2022-02-02 19:05');
+
+-> INSERT INTO TB_RESULT VALUES (30, '127.0.0.1234', 'admin', 'Linux', '[Linux, ubuntu, x86_64, 8174812, 4935904, 1205740, 4.4.0-131-generic, GNU/Linux, 7999484, 109220, 7890264, 31, 1.70, 1.87]', 'Up', 
+
+   '2022-02-02 19:05');
+
+-> CREATE TABLE TB_DATADUMP(Id int, IP varchar(20), Packet varchar(10), Memory double, Device varchar(20), CurrentTime varchar(40));
 
 -> insert into TB_DISCOVER(Name, IP, Username, Password, Device) values('Test', '127.0.0.1', 'null', 'null', 'Ping'); // for auto increment
--> ALTER TABLE TB_DISCOVER MODIFY COLUMN Id INT auto_increment
 
+-> ALTER TABLE TB_DISCOVER MODIFY COLUMN Id INT auto_increment;
 
----------------- for ssh class -----------------
+-> ALTER TABLE TB_MONITOR ADD Status VARCHAR(10);
 
-public String executeFileReadCommand(String filePath)
-    {
-        ChannelSftp channel = null;
+-> ALTER TABLE TB_MONITOR ADD CurrentTime DATETIME DEFAULT CURRENT_TIMESTAMP;
 
-        InputStream inputStream = null;
+-> ALTER TABLE TB_RESULT DROP COLUMN CurrentTime;
 
-        StringBuilder output = new StringBuilder();
+-> DELETE FROM TB_DATADUMP LIMIT 500;
 
-        try
-        {
-            if (session != null)
-            {
-                channel = (ChannelSftp) session.openChannel("sftp");
+-> DELETE FROM TB_DATADUMP LIMIT SELECT COUNT(ID)/2 FROM TB_DATADUMP WHERE STATUS = 'UP'
 
-                channel.connect();
+-> DELETE FROM TB_DATADUMP LIMIT SELECT COUNT(ID)/2 FROM TB_DATADUMP WHERE STATUS = 'DOWN'
 
-                _logger.debug(hostIp + " - checking channel connection...");
+-> SELECT COUNT(IP) FROM TB_DATADUMP WHERE IP = '127.0.0.5' AND DEVICE = 'Ping' AND STATUS = 'Down'
 
-                if (channel.isConnected())
-                {
-                    inputStream = channel.get(filePath);
+-> SELECT COUNT(*) FROM TB_DATADUMP WHERE IP = '127.0.0.5' AND DEVICE = 'Ping'
 
-                    _logger.debug(hostIp + " - channel is currently connected...");
+-> SELECT STATUS, COUNT(IP) AS Frequency  FROM TB_DATADUMP WHERE IP = '172.16.8.182' GROUP BY STATUS ORDER BY STATUS DESC
 
-                    output.append(IOUtils.toString(inputStream));
+-> SELECT * FROM TB_DATADUMP WHERE IP='172.16.8.182' BETWEEN '2022-02-21 09:00' AND '2022-02-22 22:41'
 
-                    output.append(NEW_LINE);
+-> SELECT STATUS, COUNT(IP) FROM TB_DATADUMP WHERE IP = '127.0.0.5' AND DEVICE = 'Ping' AND CURRENTTIME BETWEEN '2022-02-22 17:18' AND '2022-02-23 17:18' GROUP BY STATUS ORDER BY STATUS DESC
 
-                    _logger.debug(hostIp + " - command output -> " + output.toString());
-                }
-                else
-                {
-                    _logger.warn(hostIp + " - channel is not connected!");
-                }
-            }
-            else
-            {
-                _logger.warn(hostIp + " - session is expired!");
-            }
+-> ALTER TABLE TB_DATADUMP DROP RESPONSE
 
-            if (inputStream != null)
-            {
-                inputStream.close();
+-------------------------------------------- SQL Injection ------------------------------------------
 
-                _logger.debug(hostIp + " - channel is closed for communication!");
-            }
+-> SELECT * FROM Users WHERE UserId = 105 OR 1=1;
 
-            if (channel != null && !channel.isClosed())
-            {
-                channel.disconnect();
-
-                _logger.debug(hostIp + " - channel is disconnected!");
-            }
-        }
-        catch (Exception exception)
-        {
-            _logger.error("file not read with sftp!", exception);
-        }
-
-        return output.toString();
-    }
-
-public List<String> retrieveFileNames(String filePrefix, String fileName)
-    {
-        ChannelSftp channelSftp = null;
-
-        List<String> fileNames = new ArrayList<>();
-
-        try
-        {
-            channelSftp = (ChannelSftp) session.openChannel("sftp");
-
-            _logger.debug("Connecting to sftp channel : " + hostIp);
-
-            channelSftp.connect();
-
-            _logger.debug(hostIp + ":checking channel connection");
-
-            if (channelSftp.isConnected())
-            {
-                _logger.debug("Channel connected : " + hostIp);
-
-                ChannelSftp.LsEntrySelector selector = entry -> {
-
-                    if ((!Strings.isNullOrEmpty(filePrefix) && entry.getFilename().startsWith(filePrefix)) || (!Strings.isNullOrEmpty(fileName) && entry.getFilename().equals(fileName))) {
-
-                        fileNames.add(entry.getFilename());
-                    }
-                    return ChannelSftp.LsEntrySelector.CONTINUE;
-                };
-
-                channelSftp.ls(channelSftp.getHome(), selector);
-            }
-            else
-            {
-                _logger.warn(hostIp + ":channel is not connected");
-            }
-        }
-        catch (Exception exception)
-        {
-            _logger.debug("connection login over sftp..."+ hostIp +" failed");
-
-            _logger.error("", exception);
-        }
-        finally
-        {
-            if (channelSftp != null && !channelSftp.isClosed())
-            {
-                channelSftp.disconnect();
-
-                _logger.debug("Channel is disconnected");
-            }
-
-            _logger.debug("Server Session disconnected over sftp..."+ hostIp);
-        }
-
-        return fileNames;
-    }
-
-public void deleteFile(List<String> filesToDelete)
-    {
-        ChannelSftp channelSftp = null;
-
-        try
-        {
-            channelSftp = (ChannelSftp) session.openChannel("sftp");
-
-            _logger.debug("Connecting to sftp channel : " + hostIp);
-
-            channelSftp.connect();
-
-            _logger.debug(hostIp + ":checking channel connection");
-
-            if (channelSftp.isConnected())
-            {
-                _logger.debug("Channel connected : " + hostIp);
-
-                for (String fileToDelete : filesToDelete)
-                {
-                    _logger.info("deleting file from sftp : " + fileToDelete);
-
-                    _logger.debug("deleting file from sftp : " + fileToDelete);
-
-                    channelSftp.rm(fileToDelete);
-                }
-            }
-            else
-            {
-                _logger.warn(hostIp + ":channel is not connected");
-            }
-
-        }
-        catch (Exception exception)
-        {
-            _logger.debug("connection login over sftp..."+ hostIp +" failed");
-
-            _logger.error("", exception);
-        }
-        finally {
-
-            if (channelSftp != null && !channelSftp.isClosed())
-            {
-                channelSftp.disconnect();
-
-                _logger.debug("Sftp Channel is disconnected");
-            }
-
-            _logger.debug("Server Session disconnected over sftp..."+ hostIp);
-
-        }
-    }
-
-public boolean sendFileOverSFTP(File fileToSend)
-    {
-        ChannelSftp channelSftp = null;
-
-        boolean isFileUploadSuccessful=false;
-
-        String sftpServerIp = hostIp;
-
-        try
-        {
-            channelSftp = (ChannelSftp) session.openChannel("sftp");
-
-            channelSftp.connect();
-
-            _logger.debug(hostIp + ":checking channel connection");
-
-            if (channelSftp.isConnected())
-            {
-                InputStream inputStream = new FileInputStream(fileToSend);
-
-                channelSftp.put(inputStream, fileToSend.getName());
-
-                _logger.debug("File stored : " + fileToSend);
-
-                isFileUploadSuccessful = true;
-
-            }
-            else
-            {
-                _logger.warn(hostIp + ":channel is not connected");
-            }
-        }
-        catch (Exception exception)
-        {
-            _logger.debug("connection login over sftp..."+sftpServerIp+" failed");
-
-            _logger.error("", exception);
-        }
-        finally
-        {
-
-            if (channelSftp != null && !channelSftp.isClosed())
-            {
-                channelSftp.disconnect();
-
-                _logger.debug("Channel is disconnected");
-            }
-
-            disconnect();
-
-            _logger.debug("Server Session disconnected over sftp..."+sftpServerIp);
-
-        }
-        return isFileUploadSuccessful;
-    }
-
-public boolean sendFilesOverSFTP(List<String> filesToSend,String remoteFilePath)
-    {
-        ChannelSftp channelSftp = null;
-
-        boolean isFileUploadSuccessful = false;
-
-        String sftpServerIp = hostIp;
-
-        InputStream inputStream = null;
-
-        try
-        {
-            channelSftp = (ChannelSftp) session.openChannel("sftp");
-
-            channelSftp.connect();
-
-            _logger.debug(hostIp + ":checking channel connection");
-
-            if (channelSftp.isConnected())
-            {
-                for (String filePath : filesToSend)
-                {
-                    File file = new File(filePath);
-
-                    inputStream = new FileInputStream(file);
-
-                    channelSftp.put(inputStream, remoteFilePath+file.getName());
-
-                    _logger.debug("File stored : " + remoteFilePath+file.getName());
-                }
-
-                isFileUploadSuccessful = true;
-
-                inputStream.close();
-            }
-            else
-            {
-                _logger.warn(hostIp + ":channel is not connected");
-            }
-        }
-        catch (Exception exception)
-        {
-            _logger.debug("connection login over sftp..." + sftpServerIp + " failed");
-
-            _logger.error("", exception);
-        }
-        finally
-        {
-            if(channelSftp != null && !channelSftp.isClosed())
-            {
-                channelSftp.disconnect();
-
-                _logger.debug("Channel is disconnected");
-            }
-
-            disconnect();
-
-            _logger.debug("Server Session disconnected over sftp..." + sftpServerIp);
-        }
-        return isFileUploadSuccessful;
-    }
+-> SELECT * FROM Users WHERE Name ="" or ""="" AND Pass ="" or ""=""
