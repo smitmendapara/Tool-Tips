@@ -1,0 +1,651 @@
+private List<List<String>> getDiscoveryArrayData(ResultSet resultSet)
+    {
+        List<List<String>> discoverList = new ArrayList<>();
+
+        List<String> list;
+
+        try
+        {
+            while (resultSet.next())
+            {
+                list = new ArrayList<>();
+
+                list.add(resultSet.getString(1));
+
+                list.add(resultSet.getString(2));
+
+                list.add(resultSet.getString(3));
+
+                list.add(resultSet.getString(4));
+
+                list.add(resultSet.getString(5));
+
+                list.add(resultSet.getString(6));
+
+                list.add(resultSet.getString(7));
+
+                discoverList.add(list);
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.warn("not get array for discovery data!");
+        }
+
+        return discoverList;
+    }
+
+public List<List<String>> getDiscoverTB()
+    {
+        ResultSet resultSet;
+
+        PreparedStatement preparedStatement = null;
+
+        List<List<String>> discoverList = new ArrayList<>();
+
+        try
+        {
+            preparedStatement = getPreparedStatement("SELECT ID, NAME, IP, DEVICE, USERNAME FROM TB_DISCOVER");
+
+            String tableName = "TB_DISCOVER";
+
+            discoverList = getData("SELECT ID, NAME, IP, DEVICE, USERNAME FROM TB_DISCOVER", "SELECT", tableName, null);
+
+            resultSet = preparedStatement.executeQuery();
+
+            discoverList = getDiscoveryArrayData(resultSet);
+
+        }
+        catch (Exception exception)
+        {
+            _logger.error("not find discover table data!!", exception);
+        }
+
+        finally
+        {
+            closePreparedStatement(preparedStatement);
+
+            closeConnection(connection);
+        }
+
+        return discoverList;
+    }
+
+public List<List<String>> getMonitorTB()
+    {
+        ResultSet resultSet;
+
+        PreparedStatement preparedStatement = null;
+
+        List<List<String>> monitorList = new ArrayList<>();
+
+        try
+        {
+            preparedStatement = getPreparedStatement("SELECT * FROM TB_DISCOVER WHERE ID = ?");
+
+            String tableName = "TB_MONITOR";
+
+            List<Object> conditionList = new ArrayList<>();
+
+            conditionList.add(id);
+
+            monitorList = getData("SELECT * FROM TB_DISCOVER WHERE ID = ?", "SELECT", tableName, conditionList);
+
+            preparedStatement.setInt(1, id);
+
+            resultSet = preparedStatement.executeQuery();
+
+            monitorList = getArrayData(resultSet);
+        }
+        catch (Exception exception)
+        {
+            _logger.error("not find monitor table data where id is given!", exception);
+        }
+
+        finally
+        {
+            closePreparedStatement(preparedStatement);
+
+            closeConnection(connection);
+        }
+
+        return monitorList;
+    }
+
+public List<List<String>> getMonitorTable()
+    {
+        ResultSet resultSet;
+
+        PreparedStatement preparedStatement = null;
+
+        List<List<String>> monitorList = new ArrayList<>();
+
+        try
+        {
+            preparedStatement = getPreparedStatement("SELECT * FROM TB_MONITOR");
+
+            resultSet = preparedStatement.executeQuery();
+
+            monitorList = getArrayData(resultSet);
+        }
+        catch (Exception exception)
+        {
+            _logger.warn("not find monitor table data!");
+        }
+
+        finally
+        {
+            closePreparedStatement(preparedStatement);
+
+            closeConnection(connection);
+        }
+
+        return monitorList;
+    }
+
+public boolean checkCredential(String username, String password)
+    {
+        boolean status = false;
+
+        PreparedStatement preparedStatement = null;
+
+        ResultSet resultSet;
+
+        try
+        {
+            preparedStatement = getPreparedStatement("SELECT * FROM TB_USER WHERE USER = ? AND PASSWORD = ?");
+
+            preparedStatement.setString(1, username);
+
+            preparedStatement.setString(2, password);
+
+            resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next())
+            {
+                status = true;
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("data not get properly!", exception);
+        }
+
+        finally
+        {
+            closePreparedStatement(preparedStatement);
+
+            closeConnection(connection);
+        }
+
+        return status;
+    }
+
+public boolean enterSignUpData(String username, String password)
+    {
+        boolean status = true;
+
+        PreparedStatement preparedStatement = null;
+
+        try
+        {
+            preparedStatement = getPreparedStatement("INSERT INTO TB_USER(USER, PASSWORD) VALUES(?, ?)");
+
+            preparedStatement.setString(1, username);
+
+            preparedStatement.setString(2, password);
+
+            int affectedRow = preparedStatement.executeUpdate();
+
+            if (affectedRow == 1)
+            {
+                return true;
+            }
+
+        }
+        catch (Exception exception)
+        {
+            _logger.error("signUp data not inserted properly!", exception);
+
+            status = false;
+        }
+
+        finally
+        {
+            closePreparedStatement(preparedStatement);
+
+            closeConnection(connection);
+        }
+
+        return status;
+    }
+
+public boolean enterDiscoveryData(String name, String ip, String discoveryUsername, String discoveryPassword, String deviceType, String response, String ipStatus, String timestamp)
+    {
+        boolean status = true;
+
+        PreparedStatement preparedStatement = null;
+
+        try
+        {
+            preparedStatement = getPreparedStatement("INSERT INTO TB_DISCOVER(NAME, IP, USERNAME, PASSWORD, DEVICE, RESPONSE, STATUS, CURRENTTIME) VALUES(?, ?, ?, ?, ?, ?, ?, ?)");
+
+            if (deviceType.equals(CommonConstantUI.STRING_ZERO) || deviceType.equals(CommonConstantUI.PING_DEVICE))
+            {
+                preparedStatement.setString(1, name);
+
+                preparedStatement.setString(2, ip);
+
+                preparedStatement.setString(3, CommonConstantUI.NULL);
+
+                preparedStatement.setString(4, CommonConstantUI.NULL);
+
+                preparedStatement.setString(5, "Ping");
+
+                preparedStatement.setString(6, response);
+
+                preparedStatement.setString(7, ipStatus);
+
+                preparedStatement.setString(8, timestamp.substring(0, 16));
+
+            }
+            if (deviceType.equals(CommonConstantUI.STRING_ONE) || deviceType.equals(CommonConstantUI.LINUX_DEVICE))
+            {
+                preparedStatement.setString(1, name);
+
+                preparedStatement.setString(2, ip);
+
+                preparedStatement.setString(3, discoveryUsername);
+
+                preparedStatement.setString(4, discoveryPassword);
+
+                preparedStatement.setString(5, "Linux");
+
+                preparedStatement.setString(6, response);
+
+                preparedStatement.setString(7, ipStatus);
+
+                preparedStatement.setString(8, timestamp.substring(0, 16));
+            }
+
+            int affectedRow = preparedStatement.executeUpdate();
+
+            if (affectedRow == 1)
+            {
+                return true;
+            }
+
+            //kernel message for ping
+        }
+        catch (Exception exception)
+        {
+            _logger.error("discovery data not inserted properly!", exception);
+
+            status = false;
+        }
+
+        finally
+        {
+            closePreparedStatement(preparedStatement);
+
+            closeConnection(connection);
+        }
+
+        return status;
+    }
+
+public boolean enterReMonitorData(String ip, String deviceType, String response, String ipStatus, String timestamp)
+    {
+        boolean result = true;
+
+        PreparedStatement preparedStatement = null;
+
+        try
+        {
+            preparedStatement = getPreparedStatement("UPDATE TB_MONITOR SET RESPONSE = ?, STATUS = ?, CURRENTTIME = ? WHERE IP = ? AND DEVICETYPE = ?");
+
+            updateData(preparedStatement, response, ipStatus, timestamp, ip, deviceType);
+
+            int affectedRow = preparedStatement.executeUpdate();
+
+            if (affectedRow == 1)
+            {
+                return true;
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("monitor data not updated properly!", exception);
+
+            result = false;
+        }
+
+        finally
+        {
+            closePreparedStatement(preparedStatement);
+
+            closeConnection(connection);
+        }
+
+        return result;
+    }
+
+public boolean enterReDiscoveryData(String ip, String deviceType, String response, String ipStatus, String timestamp)
+    {
+        boolean status = true;
+
+        PreparedStatement preparedStatement = null;
+
+        try
+        {
+            preparedStatement = getPreparedStatement("UPDATE TB_DISCOVER SET RESPONSE = ?, STATUS = ?, CURRENTTIME = ? WHERE IP = ? AND DEVICE = ?");
+
+            updateData(preparedStatement, response, ipStatus, timestamp, ip, deviceType);
+
+            int affectedRow = preparedStatement.executeUpdate();
+
+            if (affectedRow == 1)
+            {
+                return true;
+            }
+
+        }
+        catch (Exception exception)
+        {
+            _logger.error("discovery data not updated properly!", exception);
+
+            status = false;
+        }
+
+        finally
+        {
+            closePreparedStatement(preparedStatement);
+
+            closeConnection(connection);
+        }
+
+        return status;
+    }
+
+public boolean enterResultTableData(String ip, String discoveryUsername, String deviceType, String response, String ipStatus, String timestamp)
+    {
+        boolean result = true;
+
+        ResultSet resultSet;
+
+        PreparedStatement preparedStatement = null;
+
+        PreparedStatement result_statement = null;
+        try
+        {
+            preparedStatement = getPreparedStatement("SELECT ID FROM TB_DISCOVER WHERE IP = ? AND DEVICE = ?");
+
+            preparedStatement.setString(1, ip);
+
+            if (deviceType.equals(CommonConstantUI.STRING_ZERO))
+            {
+                deviceType = CommonConstantUI.PING_DEVICE;
+            }
+            else
+            {
+                deviceType = CommonConstantUI.LINUX_DEVICE;
+            }
+
+            preparedStatement.setString(2, deviceType);
+
+            resultSet = preparedStatement.executeQuery();
+
+            result_statement = getPreparedStatement("INSERT INTO TB_RESULT(ID, IP, PROFILE, DEVICETYPE, RESPONSE, STATUS, CURRENTTIME) VALUES(?, ?, ?, ?, ?, ?, ?)");
+
+            while (resultSet.next())
+            {
+                if (deviceType.equals(CommonConstantUI.STRING_ZERO) || deviceType.equals(CommonConstantUI.PING_DEVICE))
+                {
+                    result_statement.setString(1, resultSet.getString(1));
+
+                    result_statement.setString(2, ip);
+
+                    result_statement.setString(3, CommonConstantUI.NULL);
+
+                    result_statement.setString(4, "Ping");
+
+                    result_statement.setString(5, response);
+
+                    result_statement.setString(6, ipStatus);
+
+                    result_statement.setString(7, timestamp.substring(0, 16));
+                }
+                else
+                {
+                    result_statement.setString(1, resultSet.getString(1));
+
+                    result_statement.setString(2, ip);
+
+                    result_statement.setString(3, discoveryUsername);
+
+                    result_statement.setString(4, "Linux");
+
+                    result_statement.setString(5, response);
+
+                    result_statement.setString(6, ipStatus);
+
+                    result_statement.setString(7, timestamp.substring(0, 16));
+                }
+            }
+
+            int affectedRow = result_statement.executeUpdate();
+
+            if (affectedRow == 1)
+            {
+                return true;
+            }
+
+        }
+        catch (Exception exception)
+        {
+            _logger.error("not inserted data into result table!", exception);
+
+            result = false;
+        }
+
+        finally
+        {
+            closePreparedStatement(result_statement);
+
+            closePreparedStatement(preparedStatement);
+
+            closeConnection(connection);
+        }
+
+        return result;
+    }
+
+public boolean enterReResultTableData(String ip, String deviceType, String response, String ipStatus, String timestamp)
+    {
+        boolean result = true;
+
+        PreparedStatement preparedStatement = null;
+
+        try
+        {
+            preparedStatement = getPreparedStatement("UPDATE TB_RESULT SET RESPONSE = ?, STATUS = ?, CURRENTTIME = ? WHERE IP = ? AND DEVICETYPE = ?");
+
+            updateData(preparedStatement, response, ipStatus, timestamp, ip, deviceType);
+
+            int affectedRow = preparedStatement.executeUpdate();
+
+            if (affectedRow == 1)
+            {
+                return true;
+            }
+
+        }
+        catch (Exception exception)
+        {
+            _logger.error("not updated data into result table!", exception);
+
+            result = false;
+        }
+
+        finally
+        {
+            closePreparedStatement(preparedStatement);
+
+            closeConnection(connection);
+        }
+
+        return result;
+    }
+
+ if (deviceType.equals(CommonConstantUI.STRING_ZERO) || deviceType.equals(CommonConstantUI.PING_DEVICE))
+                {
+                    result_statement.setString(1, resultSet.getString(1));
+
+                    result_statement.setString(2, ip);
+
+                    result_statement.setString(3, CommonConstantUI.NULL);
+
+                    result_statement.setString(4, "Ping");
+
+                    result_statement.setString(5, response);
+
+                    result_statement.setString(6, ipStatus);
+
+                    result_statement.setString(7, timestamp.substring(0, 16));
+                }
+                else
+                {
+                    result_statement.setString(1, resultSet.getString(1));
+
+                    result_statement.setString(2, ip);
+
+                    result_statement.setString(3, discoveryUsername);
+
+                    result_statement.setString(4, "Linux");
+
+                    result_statement.setString(5, response);
+
+                    result_statement.setString(6, ipStatus);
+
+                    result_statement.setString(7, timestamp.substring(0, 16));
+                }
+
+public boolean enterReMonitorData(String ip, String deviceType, String response, String ipStatus, String timestamp)
+    {
+        boolean status = false;
+
+        List<Object> conditionList = new ArrayList<>();
+
+        try
+        {
+            conditionList.add(response);
+
+            conditionList.add(ipStatus);
+
+            conditionList.add(timestamp.substring(0, 16));
+
+            conditionList.add(ip);
+
+            conditionList.add(deviceType);
+
+            getData("UPDATE TB_MONITOR SET RESPONSE = ?, STATUS = ?, CURRENTTIME = ? WHERE IP = ? AND DEVICETYPE = ?", "UPDATE", "TB_MONITOR", conditionList);
+
+            if (databaseAffected)
+            {
+                status = true;
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("monitor data not updated properly!", exception);
+        }
+
+        return status;
+    }
+
+public static boolean enterReMonitorData(String ip, String deviceType, String response, String ipStatus, String timestamp)
+    {
+        boolean result = true;
+
+        PreparedStatement preparedStatement = null;
+
+        try
+        {
+            preparedStatement = getPreparedStatement("UPDATE TB_MONITOR SET RESPONSE = ?, STATUS = ?, CURRENTTIME = ? WHERE IP = ? AND DEVICETYPE = ?");
+
+            updateData(preparedStatement, response, ipStatus, timestamp, ip, deviceType);
+
+            if (preparedStatement.execute())
+            {
+                return true;
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("monitor data not updated properly!", exception);
+
+            result = false;
+        }
+        finally
+        {
+            closeConnection(connection);
+
+            closePreparedStatement(preparedStatement);
+        }
+
+        return result;
+    }
+
+    public static boolean enterReResultTableData(String ip, String deviceType, String response, String ipStatus, String timestamp)
+    {
+        boolean result = true;
+
+        PreparedStatement preparedStatement = null;
+
+        try
+        {
+            preparedStatement = getPreparedStatement("UPDATE TB_RESULT SET RESPONSE = ?, STATUS = ?, CURRENTTIME = ? WHERE IP = ? AND DEVICETYPE = ?");
+
+            updateData(preparedStatement, response, ipStatus, timestamp, ip, deviceType);
+
+            if (preparedStatement.execute())
+            {
+                return true;
+            }
+
+        }
+        catch (Exception exception)
+        {
+            _logger.error("not updated data into result table!", exception);
+
+            result = false;
+        }
+        finally
+        {
+            closeConnection(connection);
+
+            closePreparedStatement(preparedStatement);
+        }
+
+        return result;
+    }
+
+private static void updateData(PreparedStatement preparedStatement, String response, String ipStatus, String timestamp, String ip, String deviceType)
+    {
+        try
+        {
+            preparedStatement.setString(1, response);
+
+            preparedStatement.setString(2, ipStatus);
+
+            preparedStatement.setString(3, timestamp.substring(0, 16));
+
+            preparedStatement.setString(4, ip);
+
+            preparedStatement.setString(5, deviceType);
+        }
+        catch (Exception exception)
+        {
+            _logger.warn("data not updated!");
+        }
+    }

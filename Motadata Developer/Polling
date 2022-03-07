@@ -1,0 +1,22 @@
+ for (String ip : map.keySet())
+            {
+                CommonUtil.putPollingIp(ip);
+
+                CommonUtil.putDeviceType(map.get(ip));
+
+            }
+
+
+                map.put(ip, deviceType);
+
+Thread[] threads = new Thread[5];
+
+            for (int index = 0; index <= 4; index++)
+            {
+                threads[index] = new Thread(new Polling());
+
+                threads[index].start();
+            }
+
+            
+    private static final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();

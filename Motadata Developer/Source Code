@@ -1,0 +1,1713 @@
+-------------------------------- SSH ----------------------------------------
+
+-> 172.16.8.182
+-> user - root
+-> pass - motadata
+
+-------------------------- RESULT TABLE -----------------------------
+
+public boolean enterResultTableData(String ip, String name, String discoveryUsername, String deviceType, String timestamp)
+    {
+        boolean result = false;
+
+        List<Object> conditionList = new ArrayList<>();
+
+        try
+        {
+            if (deviceType.equals(CommonConstantUI.STRING_ZERO))
+            {
+                deviceType = CommonConstantUI.PING_DEVICE;
+            }
+            else
+            {
+                deviceType = CommonConstantUI.LINUX_DEVICE;
+            }
+
+            conditionList.add(ip);
+
+            conditionList.add(deviceType);
+
+            conditionList.add(name);
+
+            conditionList.add(discoveryUsername);
+
+            conditionList.add(CommonConstantUI.NULL);
+
+            conditionList.add(timestamp.substring(0, 16));
+
+            conditionList.add(true);
+
+            getData("SELECT * FROM TB_DISCOVER WHERE IP = ? AND DEVICE = ?", CommonConstantUI.DB_SELECT, CommonConstantUI.DB_TB_DISCOVER, conditionList);
+
+            getData("INSERT INTO TB_RESULT(ID, IP, PROFILE, DEVICETYPE, CURRENTTIME) VALUES(?, ?, ?, ?, ?)", CommonConstantUI.DB_INSERT, CommonConstantUI.DB_TB_RESULT, null);
+
+            if (databaseAffected)
+            {
+                result = true;
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("not inserted data into result table!", exception);
+        }
+
+        return result;
+    }
+
+    public boolean enterReResultTableData(String ip, String deviceType)
+    {
+        boolean status = false;
+
+        List<Object> conditionList = new ArrayList<>();
+
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+
+        try
+        {
+            conditionList.add(timestamp.toString().substring(0, 16));
+
+            conditionList.add(ip);
+
+            conditionList.add(deviceType);
+
+            getData("UPDATE TB_RESULT SET CURRENTTIME = ? WHERE IP = ? AND DEVICETYPE = ?", CommonConstantUI.DB_UPDATE, CommonConstantUI.DB_TB_DISCOVER, conditionList);
+
+            if (databaseAffected)
+            {
+                status = true;
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("result table data not updated properly!", exception);
+        }
+
+        return status;
+    }
+
+------------------------------ Service Provider ----------------------------
+
+ private String getRTTTime(String subString)
+    {
+        String rttTime = CommonConstant.STRING_ZERO;
+
+        try
+        {
+            int rtt = subString.indexOf("rtt");
+
+            if (rtt != -1)
+            {
+                rttTime = subString.substring(subString.indexOf("rtt") + 23, subString.indexOf("rtt") + 24);
+            }
+
+        }
+        catch (Exception exception)
+        {
+            _logger.warn("packet not receive!");
+        }
+
+        return rttTime;
+    }
+
+    private String getPacketLoss(String subString)
+    {
+        String receivedPacket = null;
+
+        String packetLoss = null;
+
+        try
+        {
+            receivedPacket = subString.substring(subString.indexOf("transmitted") + 13, subString.indexOf("transmitted") + 14);
+
+            switch (receivedPacket)
+            {
+                case CommonConstant.STRING_ZERO  : packetLoss = CommonConstant.STRING_HUNDRED;
+
+                                                   break;
+
+                case CommonConstant.STRING_ONE   : packetLoss = CommonConstant.STRING_SEVENTY_FIVE;
+
+                                                   break;
+
+                case CommonConstant.STRING_TWO   : packetLoss = CommonConstant.STRING_FIFTY;
+
+                                                   break;
+
+                case CommonConstant.STRING_THREE : packetLoss = CommonConstant.STRING_TWENTY_FIVE;
+
+                                                   break;
+
+                case CommonConstant.STRING_FOUR  : packetLoss = CommonConstant.STRING_ZERO;
+
+                                                   break;
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.warn("packet not receive!");
+        }
+
+        return packetLoss;
+    }
+
+    private String getSentPacket(String subString)
+    {
+        String sentPacket = null;
+
+        try
+        {
+            sentPacket = subString.substring(subString.indexOf("statistics") + 14, subString.indexOf("statistics") + 15);
+        }
+        catch (Exception exception)
+        {
+            _logger.warn("packet not receive!");
+        }
+
+        return sentPacket;
+    }
+
+-------------------------------- Bean ---------------------------------------
+
+for (int k = 0; k < dashboardList.size(); k++)
+                {
+                    bean = new DashboardBean();
+
+                    bean.setId(Integer.parseInt(dashboardList.get(k).get(0)));
+
+                    bean.setName(dashboardList.get(k).get(1));
+
+                    bean.setIP(dashboardList.get(k).get(2));
+
+                    if (dashboardList.get(k).get(3) == null)
+                    {
+                        profile = "null";
+
+                        bean.setUsername(profile);
+                    }
+                    else
+                    {
+                        bean.setUsername(dashboardList.get(k).get(3));
+                    }
+
+                    bean.setDevice(dashboardList.get(k).get(5));
+
+                    if (dashboardList.get(k).get(5).equals("Linux") && dashboardList.get(k).get(7).equals("Down"))
+                    {
+                        String linuxResponse[] = ServiceProvider.getLinuxData(dashboardList.get(k).get(6));
+
+                        bean.setResponse(linuxResponse);
+                    }
+                    else if (dashboardList.get(k).get(5).equals("Linux") && dashboardList.get(k).get(7).equals("Up"))
+                    {
+                        String linuxResponse[] = ServiceProvider.getLinuxData(dashboardList.get(k).get(6));
+
+                        bean.setResponse(linuxResponse);
+                    }
+                    else
+                    {
+                        String pingResponse[] = ServiceProvider.getPingData(dashboardList.get(k).get(6));
+
+                        bean.setResponse(pingResponse);
+                    }
+
+                    bean.setStatus(dashboardList.get(k).get(7));
+
+                    String dateTime[] = ServiceProvider.getDateTime();
+
+                    bean.setCurrentTime(dateTime);
+
+                    String receivedPacket[] = new String[dateTime.length];
+
+                    String memoryStorage[] = new String[dateTime.length];
+
+                    if (dashboardList.get(k).get(5).equals("Ping"))
+                    {
+                        for (int i = 0; i < dateTime.length; i++)
+                        {
+                            receivedPacket[i] = UserDAO.getUpdatedPacket(Integer.parseInt(dashboardList.get(k).get(0)), dashboardList.get(k).get(1), dateTime[i], dashboardList.get(k).get(4));
+                        }
+
+                        bean.setPacket(receivedPacket);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < dateTime.length; i++)
+                        {
+                            memoryStorage[i] = String.valueOf(UserDAO.getUpdatedMemory(Integer.parseInt(dashboardList.get(k).get(0)), dashboardList.get(k).get(1), dateTime[i], dashboardList.get(k).get(4)));
+                        }
+
+                        bean.setMemory(memoryStorage);
+                    }
+
+                    beanList.add(bean);
+                }
+
+----------------------------- dao ---------------------------------
+
+ public List<List<String>> getReDiscoveryData(String ip, String deviceType)
+    {
+        List<List<String>> rediscoveryList = new ArrayList<>();
+
+        List<Object> conditionList = new ArrayList<>();
+
+        try
+        {
+            conditionList.add(ip);
+
+            conditionList.add(deviceType);
+
+            rediscoveryList = getData("SELECT * FROM TB_MONITOR WHERE IP = ? AND DEVICE = ?", CommonConstantUI.DB_SELECT, CommonConstantUI.DB_TB_DISCOVER, conditionList);
+        }
+        catch (Exception exception)
+        {
+            _logger.error("not find re discover table data!!", exception);
+        }
+
+        return rediscoveryList;
+    }
+
+    public List<List<String>> getReMonitorData(String ip, String deviceType)
+    {
+        List<List<String>> reMonitorList = new ArrayList<>();
+
+        List<Object> conditionList = new ArrayList<>();
+
+        try
+        {
+            conditionList.add(ip);
+
+            conditionList.add(deviceType);
+
+            reMonitorList = getData("SELECT * FROM TB_MONITOR WHERE IP = ? AND DEVICETYPE = ?", CommonConstantUI.DB_SELECT, CommonConstantUI.DB_TB_MONITOR, conditionList);
+        }
+        catch (Exception exception)
+        {
+            _logger.error("not find re monitor table data!!", exception);
+        }
+
+        return reMonitorList;
+    }
+
+
+------------------ service provider -----------------------------
+
+private void setRediscoverProperties(List<List<String>> dataList)
+    {
+        try
+        {
+            name = dataList.get(0).get(1);
+
+            discoveryUsername = dataList.get(0).get(3);
+
+            discoveryPassword = dataList.get(0).get(4);
+
+            deviceType = dataList.get(0).get(5);
+
+        }
+        catch (Exception exception)
+        {
+            _logger.warn("not set your re discover data properties!");
+        }
+    }
+
+
+if (!dataList.isEmpty())
+                        {
+                            if (_dao.enterReDiscoveryData(ip, deviceType, specificData, ipStatus, timestamp.toString()))
+                            {
+                                if (_dao.enterReResultTableData(ip, deviceType, specificData, ipStatus, timestamp.toString()))
+                                {
+                                    _logger.debug("successfully re-inserted into tb_discovery & tb_result table!");
+                                }
+
+                                else
+                                {
+                                    _logger.debug("successfully data inserted into tb_discovery table!");
+
+                                    _logger.warn("still not inserted data into tb_result table!");
+                                }
+                            }
+                            else
+                            {
+                                _logger.warn("data not inserted into tb_discover and tb_result table!");
+                            }
+                        }
+                        else
+                        {
+                            if (sshConnectionUtil != null)
+                            {
+                                if (_dao.enterMonitorTableData(id, response, ipStatus))
+                                {
+                                    _logger.debug("successfully data inserted into tb_monitor table!");
+                                }
+                                else
+                                {
+                                    _logger.warn("still not inserted into tb_discover and tb_result table!");
+                                }
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                        }
+if (!dataList.isEmpty())
+                        {
+                            setRediscoverProperties(dataList);
+
+                            if (_dao.enterReDiscoveryData(ip, deviceType, response, ipStatus, timestamp.toString()))
+                            {
+                                if (_dao.enterReResultTableData(ip, deviceType, response, ipStatus, timestamp.toString()))
+                                {
+                                    _logger.debug("successfully data re-inserted into tb_discovery & tb_result table!");
+                                }
+                                else
+                                {
+                                    _logger.warn("still not re-inserted data into tb_result table!");
+                                }
+                            }
+                            else
+                            {
+                                _logger.warn("still not re-inserted into tb_discover and tb_result table!");
+                            }
+
+                        }
+                        else
+                        {
+                            if (_dao.enterMonitorTableData(id, response, ipStatus))
+                            {
+                                _logger.debug("successfully data inserted into tb_monitor table!");
+                            }
+                            else
+                            {
+                                _logger.warn("still not inserted into tb_discover and tb_result table!");
+                            }
+                        }
+
+---------------------------------- Constant --------------------------
+
+public static final String JETTY_NAME = "jetty-distribution-9.4.44.v20210927/";
+
+    public static final String JETTY_JAR = "start.jar";
+
+    public static final String NSQ_NAME = "nsq-1.2.1.linux-amd64.go1.16.6/bin/";
+
+    public static final String NSQ_LOOKUP_COMMAND = "./nsqlookupd";
+
+    public static final String NSQ_D_COMMAND = "./nsqd --lookupd-tcp-address=127.0.0.1:4160";
+
+------------------------------ resultset -----------------------------
+
+public static String getResultSet()
+    {
+        Statement statement = null;
+
+        ResultSet resultSet = null;
+
+        String string = "<tr class=\"disc__data\">" + "<td><input type=\"hidden\" name=\"key\" id=\"key\" value=\"zero\" >zero</td>" + "<td><input type=\"checkbox\" id=\"check\" checked></td>" + "<td >one</td>" + "<td>0</td>" + "<td>two</td>" + "<td>three</td>" + "</tr>";
+
+        try
+        {
+            statement = getStatement();
+
+            resultSet = statement.executeQuery(selectColumnResult + " WHERE ID = " + _dao.getNewId());
+
+            while (resultSet.next())
+            {
+                String string0 = resultSet.getString(1);
+
+                String string1 = resultSet.getString(2);
+
+                String string2 = resultSet.getString(3);
+
+                String string3 = resultSet.getString(4);
+
+                string = string.replace("zero", string0);
+
+                string = string.replace("one", string1);
+
+                if (resultSet.getString(3) == null)
+                {
+                    string = string.replace("two", "");
+                }
+                else
+                {
+                    string = string.replace("two", string2);
+                }
+
+                string = string.replace("three", string3);
+            }
+
+            resultSet.close();
+
+        }
+        catch (Exception exception)
+        {
+            _logger.error("not get resultSet!", exception);
+        }
+
+        return string;
+    }
+ 
+------------------------------------- stack trace ----------------------------------------------------
+
+Index 0 of stack trace array contains = com.jcraft.jsch.Util.createSocket(Util.java:394)
+Index 1 of stack trace array contains = com.jcraft.jsch.Session.connect(Session.java:215)
+Index 2 of stack trace array contains = com.motadata.kernel.util.SSHConnectionUtil.connect(SSHConnectionUtil.java:131)
+Index 3 of stack trace array contains = com.motadata.kernel.util.SSHConnectionUtil.createConnection(SSHConnectionUtil.java:160)
+Index 4 of stack trace array contains = com.motadata.kernel.util.SSHConnectionUtil.getNewSSHObject(SSHConnectionUtil.java:190)
+Index 5 of stack trace array contains = com.motadata.kernel.helper.ServiceProvider.checkDiscovery(ServiceProvider.java:201)
+Index 6 of stack trace array contains = com.motadata.kernel.discovery.Scheduler.run(Scheduler.java:58)
+Index 7 of stack trace array contains = java.lang.Thread.run(Thread.java:748)
+
+Index 0 of stack trace array contains = com.jcraft.jsch.Util.createSocket(Util.java:394)
+Index 1 of stack trace array contains = com.jcraft.jsch.Session.connect(Session.java:215)
+Index 2 of stack trace array contains = com.motadata.kernel.util.SSHConnectionUtil.connect(SSHConnectionUtil.java:131)
+Index 3 of stack trace array contains = com.motadata.kernel.util.SSHConnectionUtil.createConnection(SSHConnectionUtil.java:160)
+Index 4 of stack trace array contains = com.motadata.kernel.util.SSHConnectionUtil.getNewSSHObject(SSHConnectionUtil.java:190)
+Index 5 of stack trace array contains = com.motadata.kernel.helper.ServiceProvider.checkDiscovery(ServiceProvider.java:201)
+Index 6 of stack trace array contains = com.motadata.kernel.discovery.Scheduler.run(Scheduler.java:58)
+Index 7 of stack trace array contains = java.util.TimerThread.mainLoop(Timer.java:555)
+Index 8 of stack trace array contains = java.util.TimerThread.run(Timer.java:505)
+
+------------------------------- rediscovery -------------------------------
+
+public static boolean enterReDiscoveryData(String name, String ip, String discoveryUsername, String discoveryPassword, String deviceType, String response, String ipStatus, String timestamp)
+    {
+        boolean status = true;
+
+        try
+        {
+            Class.forName("org.h2.Driver");
+
+            Connection connection = _dao.getConnection();
+
+            PreparedStatement preparedStatement = connection.prepareStatement(updateDiscover);
+
+            updateData(preparedStatement, response, ipStatus, timestamp, ip);
+
+            if (preparedStatement.execute())
+            {
+                return true;
+            }
+
+        }
+        catch (Exception exception)
+        {
+            _logger.error("discovery data not updated properly!", exception);
+
+            status = false;
+        }
+
+        return status;
+    }
+
+--------------------------------- time series bar --------------------------
+
+//            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+//
+//            Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm").parse(time);
+//
+//            Calendar currentTime = Calendar.getInstance();
+//
+//            currentTime.setTime(date);
+//
+//            currentTime.add(Calendar.MINUTE, -5);
+//
+//            Date secondTime = currentTime.getTime();
+//
+//            String updatedTime = dateFormat.format(secondTime);
+
+------------------------ timestamp --------------------------------
+
+String firstPoll = timestamp.substring(0, 19);
+
+                                       int firstValue = Integer.parseInt(firstPoll.substring(14, 16)) - 5;
+
+                                       String secondPoll = firstPoll.replace(firstPoll.substring(14, 16), String.valueOf(firstValue));
+
+                                       int secondValue = Integer.parseInt(secondPoll.substring(14, 16)) - 5;
+
+                                       String thirdPoll = secondPoll.replace(secondPoll.substring(14, 16), String.valueOf(secondValue));
+
+                                       int thirdValue = Integer.parseInt(thirdPoll.substring(14, 16)) - 5;
+
+                                       String fourthPoll = secondPoll.replace(secondPoll.substring(14, 16), String.valueOf(thirdValue));
+
+---------------------- linux_dashboard -----------------------
+
+<%@ page import="java.sql.ResultSet" %>
+
+<%@ page import="action.dao.UserDAO" %>
+
+<%--
+  Created by IntelliJ IDEA.
+  User: smit
+  Date: 24/1/22
+  Time: 5:08 PM
+  To change this template use File | Settings | File Templates.
+--%>
+
+<jsp:include page="index.jsp"></jsp:include>
+
+<hr/>
+
+    <%@ taglib uri="/struts-tags" prefix="s" %>
+
+    <%-- css file --%>
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <%-- icon library --%>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+
+    <%-- chart library --%>
+
+    <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+
+    <%--<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>--%>
+
+    <%-- jQuery library --%>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <script type="text/javascript" src="js/jquery-3.1.1.min.js"></script>
+
+    <%-- js file --%>
+
+    <script src="js/index.js"></script>
+
+    <br/>
+
+    <body>
+
+        <div class="demo" style="float:left;margin-top: 10px">
+
+            <nav>
+
+                <a href="discover" class="lg__cover"><i class="bi bi-disc"></i>&nbsp;Discovery</a>
+
+                <a href="monitor" class="lg__monitor"><i class="bi bi-tv"></i>&nbsp;Monitor</a>
+
+                <a href="dashboard" class="lg__dashboard"><i class="bi bi-grid"></i>&nbsp;Dashboard</a>
+
+            </nav>
+
+        </div>
+
+        <br><br>
+
+        <hr/>
+
+        <div class="dashboard__details">
+
+            <table width="100%">
+
+                <tbody>
+
+                <%
+                    try
+                    {
+                        ResultSet resultSet = UserDAO.getDashboardData();
+
+                        while (resultSet.next())
+                        {
+                            String IP = resultSet.getString(3);
+
+                %>
+                <tr>
+
+                    <td><b>IP/Host</b>: <%=IP %></td>
+
+                    <td><b>Profile</b>: <%=resultSet.getString(4)%></td>
+
+                    <td><b>Poll Time</b>: <%=resultSet.getString(9)%></td>
+
+                </tr>
+
+                <tr>
+
+                    <td><b>Id</b>: <%=resultSet.getString(1)%></td>
+
+                    <td><b>Status</b>: <%=resultSet.getString(8)%></td>
+
+                    <td><b>DeviceType</b>: <%=resultSet.getString(6)%></td>
+
+                </tr>
+                <%
+                        }
+
+                        resultSet.close();
+                    }
+
+                    catch (Exception exception)
+                    {
+                        exception.printStackTrace();
+                    }
+
+                %>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div>
+
+            <table width="100%">
+
+                <tbody>
+
+                <tr style="height: 300px">
+
+                    <%-- dougnut chart --%>
+                    <td class="dash__firstRow">
+
+                        <div id="dougnutChart" style="height: 270px; width: 100%;"></div>
+
+                    </td>
+
+                    <%
+                        try
+                        {
+                            ResultSet resultSet = UserDAO.getDashboardData();
+
+                            while (resultSet.next())
+                            {
+                                String Status = resultSet.getString(8);
+
+                                if (Status.equals("Up"))
+                                {
+                                    String responseRow = UserDAO.getLinuxDashboardData();
+
+                                    String[] responseData = responseRow.split(",");
+
+                    %>
+
+                    <%-- first widgets --%>
+                    <td class="linux__firstWidget">
+
+                        <div class="">
+
+                            <table width="18.75%">
+
+                                <tbody>
+
+                                    <tr>
+
+                                        <td><b>Monitor</b></td>
+
+                                        <td><%=resultSet.getString(3)%></td>
+
+                                    </tr>
+
+                                    <tr>
+
+                                        <td><b>Type</b></td>
+
+                                        <td><%=responseData[0].trim() %></td>
+
+                                    </tr>
+
+                                    <tr>
+
+                                        <td><b>System</b></td>
+
+                                        <td><%=responseData[1].trim() %></td>
+
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </td>
+
+                    <%-- second widgets --%>
+                    <td class="dash__thirdRow">
+
+                        <div class="dash__widget">
+
+                            <div>
+
+                                <p>Memory (%)</p>
+
+                            </div>
+
+                            <div>
+
+                                <%--<p class="dash__response"><%=getPacketLoss(Response) %></p>--%>
+
+                            </div>
+
+                        </div>
+
+                    </td>
+
+                    <%-- third widgets --%>
+                    <td class="dash__fourthRow">
+
+                        <div class="dash__widget">
+
+                            <div>
+
+                                <p>Received Packet</p>
+
+                            </div>
+
+                            <div>
+
+                                <%--<p class="dash__response"><%=getReceivedPacket(Response) %></p>--%>
+
+                            </div>
+
+                        </div>
+
+                    </td>
+
+                    <%-- fourth widgets --%>
+                    <td class="dash__fifthRow">
+
+                        <div class="dash__widget">
+
+                            <div>
+
+                                <p>RTT (ms)</p>
+
+                            </div>
+
+                            <div>
+
+                                <%--<p class="dash__response"><%=getRTTTime(Response) %></p>--%>
+
+                            </div>
+
+                        </div>
+
+                    </td>
+
+                    <%
+                                }
+
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            exception.printStackTrace();
+                        }
+                    %>
+
+                </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </body>
+
+
+---------------------------------------------- Chart Example ---------------------------------------------------
+
+
+// Load google charts
+google.charts.load('current', {'packages':['corechart']});
+google.charts.setOnLoadCallback(drawChart);
+
+// Draw the chart and set the chart values
+function drawChart() {
+    var data = google.visualization.arrayToDataTable([
+        ['Task', 'Hours per Day'],
+        ['Work', 8],
+        ['Eat', 2],
+        ['TV', 4],
+        ['Gym', 2],
+        ['Sleep', 8]
+    ]);
+
+    // Optional; add a title and set the width and height of the chart
+    var options = {'title':'My Average Day', 'width':550, 'height':400};
+
+    // Display the chart inside the <div> element
+    var chart = new google.visualization.PieChart(document.getElementById('pieChart'));
+
+    chart.draw(data, options);
+}
+
+// create time series chart
+
+google.charts.load('current', {packages: ['corechart', 'line']});
+google.charts.setOnLoadCallback(drawBasic);
+
+function drawBasic() {
+
+    var data = new google.visualization.DataTable();
+    data.addColumn('number', 'X');
+    data.addColumn('number', 'Dogs');
+
+    data.addRows([
+        [0, 0],   [1, 10],  [2, 23],  [3, 17],  [4, 18],  [5, 9],
+        [6, 11],  [7, 27],  [8, 33],  [9, 40],  [10, 32], [11, 35],
+        [12, 30], [13, 40], [14, 42], [15, 47], [16, 44], [17, 48],
+        [18, 52], [19, 54], [20, 42], [21, 55], [22, 56], [23, 57],
+        [24, 60], [25, 50], [26, 52], [27, 51], [28, 49], [29, 53],
+        [30, 55], [31, 60], [32, 61], [33, 59], [34, 62], [35, 65],
+        [36, 62], [37, 58], [38, 55], [39, 61], [40, 64], [41, 65],
+        [42, 63], [43, 66], [44, 67], [45, 69], [46, 69], [47, 70],
+        [48, 72], [49, 68], [50, 66], [51, 65], [52, 67], [53, 70],
+        [54, 71], [55, 72], [56, 73], [57, 75], [58, 70], [59, 68],
+        [60, 64], [61, 60], [62, 65], [63, 67], [64, 68], [65, 69],
+        [66, 70], [67, 72], [68, 75], [69, 80]
+    ]);
+
+    var options = {
+        hAxis: {
+            title: 'Time'
+        },
+        vAxis: {
+            title: 'Popularity'
+        }
+    };
+
+    var chart = new google.visualization.LineChart(document.getElementById('timeChart'));
+
+    chart.draw(data, options);
+}
+
+
+--------------------------------------- Constant -----------------------------------------
+
+
+String DB_URL = "jdbc:h2:tcp://localhost/configdb;DATABASE_TO_UPPER=false;IGNORECASE=TRUE;MODE=PostgreSQL;AUTO_RECONNECT=TRUE;AUTO_SERVER=TRUE;MV_STORE=FALSE;MVCC=FALSE";
+
+String USER = "motadata";
+
+String PASS = "motadata";
+
+
+//    public static final short PARAMETER_LIST = 14;
+
+    short DB_HOST = 1;
+
+    short DB_USER_NAME = 2;
+
+    short DB_PASSWORD = 3;
+
+    short DB_PORT = 4;
+
+    short DB_TABLE_NAME = 5;
+
+    short DB_OPERATION = 6;
+
+    short DB_COLUMN = 8;
+
+    short DB_NAME = 10;
+
+    short DB_CONNECTION = 11;
+
+    short DB_CONDITION = 12;
+
+
+    short DB_OPERATION_CREATE = 1;
+
+    short DB_OPERATION_DROP = 2;
+
+    short DB_OPERATION_UPDATE = 3;
+
+//    short DB_OPERATION_SELECT = 5;
+
+//    short DB_OPERATION_DELETE = 6;
+
+    String DB_CONNECTION_DRIVER_STRING = "org.h2.Driver";
+
+    short DB_OPERATION_BULK_INSERT = 25;
+
+    short DB_OPERATION_BULK_UPDATE = 31;
+
+    short DB_BULK_DATA = 26;
+
+    short DB_OPERATION_BULK_DELETE = 27;
+
+    short DB_OPERATION_CREATE_INDEX = 28;
+
+    short DB_OPERATION_INDEX_NAME = 29;
+
+    short DB_CONFIG = 1;
+
+
+//    short MAX_POOL_LIMIT_CONFIG_DB = TraceOrgConfigUtil.getMaxConfigDbConnections();
+
+package com.motadata.traceorg.util;
+
+import com.motadata.traceorg.sdk.util.TraceOrgConfigUtil;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: adhamelia
+ * Date: 8/3/11
+ * Time: 4:18 PM
+ * To change this template use File | Settings | File Templates.
+ */
+public interface TraceOrgDAOConstants
+{
+
+    short DB_HOST = 1;
+
+    short DB_USER_NAME = 2;
+
+    short DB_PASSWORD = 3;
+
+    short DB_PORT = 4;
+
+    short DB_TABLE_NAME = 5;
+
+    short DB_OPERATION = 6;
+
+    short DB_TABLE_DATA = 7;
+
+    short DB_COLUMN = 8;
+
+    short DB_NAME = 10;
+
+    short DB_CONNECTION = 11;
+
+    short DB_CONDITION = 12;
+
+    short DB_RESULT_SET = 13;
+
+    short DB_PARAMETER_LIST = 14;
+
+    short DB_COLUMN_AUTO_ID = 15;
+
+    short DB_OPERATION_CREATE = 1;
+
+    short DB_OPERATION_DROP = 2;
+
+    short DB_OPERATION_UPDATE = 3;
+
+    short DB_OPERATION_INSERT = 4;
+
+    short DB_OPERATION_SELECT = 5;
+
+    short DB_OPERATION_DELETE = 6;
+
+    String DB_CONNECTION_DRIVER_STRING = "org.h2.Driver";
+
+    short DB_OPERATION_BULK_INSERT = 25;
+
+    short DB_OPERATION_BULK_UPDATE = 31;
+
+    short DB_BULK_DATA = 26;
+
+    short DB_OPERATION_BULK_DELETE = 27;
+
+    short DB_OPERATION_CREATE_INDEX = 28;
+
+    short DB_OPERATION_INDEX_NAME = 29;
+
+    short DB_CONFIG = 1;
+
+    short DB_QUERY_STATUS = 30;
+
+    short MAX_POOL_LIMIT_CONFIG_DB = TraceOrgConfigUtil.getMaxConfigDbConnections();
+
+
+}
+
+
+---------------------------------------------------- for ssh class ----------------------------------------
+
+public String executeFileReadCommand(String filePath)
+    {
+        ChannelSftp channel = null;
+
+        InputStream inputStream = null;
+
+        StringBuilder output = new StringBuilder();
+
+        try
+        {
+            if (session != null)
+            {
+                channel = (ChannelSftp) session.openChannel("sftp");
+
+                channel.connect();
+
+                _logger.debug(hostIp + " - checking channel connection...");
+
+                if (channel.isConnected())
+                {
+                    inputStream = channel.get(filePath);
+
+                    _logger.debug(hostIp + " - channel is currently connected...");
+
+                    output.append(IOUtils.toString(inputStream));
+
+                    output.append(NEW_LINE);
+
+                    _logger.debug(hostIp + " - command output -> " + output.toString());
+                }
+                else
+                {
+                    _logger.warn(hostIp + " - channel is not connected!");
+                }
+            }
+            else
+            {
+                _logger.warn(hostIp + " - session is expired!");
+            }
+
+            if (inputStream != null)
+            {
+                inputStream.close();
+
+                _logger.debug(hostIp + " - channel is closed for communication!");
+            }
+
+            if (channel != null && !channel.isClosed())
+            {
+                channel.disconnect();
+
+                _logger.debug(hostIp + " - channel is disconnected!");
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("file not read with sftp!", exception);
+        }
+
+        return output.toString();
+    }
+
+public List<String> retrieveFileNames(String filePrefix, String fileName)
+    {
+        ChannelSftp channelSftp = null;
+
+        List<String> fileNames = new ArrayList<>();
+
+        try
+        {
+            channelSftp = (ChannelSftp) session.openChannel("sftp");
+
+            _logger.debug("Connecting to sftp channel : " + hostIp);
+
+            channelSftp.connect();
+
+            _logger.debug(hostIp + ":checking channel connection");
+
+            if (channelSftp.isConnected())
+            {
+                _logger.debug("Channel connected : " + hostIp);
+
+                ChannelSftp.LsEntrySelector selector = entry -> {
+
+                    if ((!Strings.isNullOrEmpty(filePrefix) && entry.getFilename().startsWith(filePrefix)) || (!Strings.isNullOrEmpty(fileName) && entry.getFilename().equals(fileName))) {
+
+                        fileNames.add(entry.getFilename());
+                    }
+                    return ChannelSftp.LsEntrySelector.CONTINUE;
+                };
+
+                channelSftp.ls(channelSftp.getHome(), selector);
+            }
+            else
+            {
+                _logger.warn(hostIp + ":channel is not connected");
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.debug("connection login over sftp..."+ hostIp +" failed");
+
+            _logger.error("", exception);
+        }
+        finally
+        {
+            if (channelSftp != null && !channelSftp.isClosed())
+            {
+                channelSftp.disconnect();
+
+                _logger.debug("Channel is disconnected");
+            }
+
+            _logger.debug("Server Session disconnected over sftp..."+ hostIp);
+        }
+
+        return fileNames;
+    }
+
+public void deleteFile(List<String> filesToDelete)
+    {
+        ChannelSftp channelSftp = null;
+
+        try
+        {
+            channelSftp = (ChannelSftp) session.openChannel("sftp");
+
+            _logger.debug("Connecting to sftp channel : " + hostIp);
+
+            channelSftp.connect();
+
+            _logger.debug(hostIp + ":checking channel connection");
+
+            if (channelSftp.isConnected())
+            {
+                _logger.debug("Channel connected : " + hostIp);
+
+                for (String fileToDelete : filesToDelete)
+                {
+                    _logger.info("deleting file from sftp : " + fileToDelete);
+
+                    _logger.debug("deleting file from sftp : " + fileToDelete);
+
+                    channelSftp.rm(fileToDelete);
+                }
+            }
+            else
+            {
+                _logger.warn(hostIp + ":channel is not connected");
+            }
+
+        }
+        catch (Exception exception)
+        {
+            _logger.debug("connection login over sftp..."+ hostIp +" failed");
+
+            _logger.error("", exception);
+        }
+        finally {
+
+            if (channelSftp != null && !channelSftp.isClosed())
+            {
+                channelSftp.disconnect();
+
+                _logger.debug("Sftp Channel is disconnected");
+            }
+
+            _logger.debug("Server Session disconnected over sftp..."+ hostIp);
+
+        }
+    }
+
+public boolean sendFileOverSFTP(File fileToSend)
+    {
+        ChannelSftp channelSftp = null;
+
+        boolean isFileUploadSuccessful=false;
+
+        String sftpServerIp = hostIp;
+
+        try
+        {
+            channelSftp = (ChannelSftp) session.openChannel("sftp");
+
+            channelSftp.connect();
+
+            _logger.debug(hostIp + ":checking channel connection");
+
+            if (channelSftp.isConnected())
+            {
+                InputStream inputStream = new FileInputStream(fileToSend);
+
+                channelSftp.put(inputStream, fileToSend.getName());
+
+                _logger.debug("File stored : " + fileToSend);
+
+                isFileUploadSuccessful = true;
+
+            }
+            else
+            {
+                _logger.warn(hostIp + ":channel is not connected");
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.debug("connection login over sftp..."+sftpServerIp+" failed");
+
+            _logger.error("", exception);
+        }
+        finally
+        {
+
+            if (channelSftp != null && !channelSftp.isClosed())
+            {
+                channelSftp.disconnect();
+
+                _logger.debug("Channel is disconnected");
+            }
+
+            disconnect();
+
+            _logger.debug("Server Session disconnected over sftp..."+sftpServerIp);
+
+        }
+        return isFileUploadSuccessful;
+    }
+
+public boolean sendFilesOverSFTP(List<String> filesToSend,String remoteFilePath)
+    {
+        ChannelSftp channelSftp = null;
+
+        boolean isFileUploadSuccessful = false;
+
+        String sftpServerIp = hostIp;
+
+        InputStream inputStream = null;
+
+        try
+        {
+            channelSftp = (ChannelSftp) session.openChannel("sftp");
+
+            channelSftp.connect();
+
+            _logger.debug(hostIp + ":checking channel connection");
+
+            if (channelSftp.isConnected())
+            {
+                for (String filePath : filesToSend)
+                {
+                    File file = new File(filePath);
+
+                    inputStream = new FileInputStream(file);
+
+                    channelSftp.put(inputStream, remoteFilePath+file.getName());
+
+                    _logger.debug("File stored : " + remoteFilePath+file.getName());
+                }
+
+                isFileUploadSuccessful = true;
+
+                inputStream.close();
+            }
+            else
+            {
+                _logger.warn(hostIp + ":channel is not connected");
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.debug("connection login over sftp..." + sftpServerIp + " failed");
+
+            _logger.error("", exception);
+        }
+        finally
+        {
+            if(channelSftp != null && !channelSftp.isClosed())
+            {
+                channelSftp.disconnect();
+
+                _logger.debug("Channel is disconnected");
+            }
+
+            disconnect();
+
+            _logger.debug("Server Session disconnected over sftp..." + sftpServerIp);
+        }
+        return isFileUploadSuccessful;
+    }
+
+
+------------------------- NEW SSH -----------------------------
+
+public SSHConnectionUtil(String hostIp, int port, String username, String password, int timeout)
+    {
+
+        this(hostIp, port, username, password, null, null, timeout);
+    }
+
+    public SSHConnectionUtil(String hostIp, int port, String username, String password, String keyFilePath, String passPhrase, int timeout)
+    {
+        this.hostIp = hostIp;
+
+        this.port = port;
+
+        this.username = username;
+
+        this.keyFilePath = keyFilePath;
+
+        this.passPhrase = passPhrase;
+
+        this.timeout = timeout;
+
+        this.password = password;
+    }
+
+------------------------------- OLD SSH ---------------------------------
+
+package com.motadata.kernel.util;
+
+import com.jcraft.jsch.ChannelExec;
+
+import com.jcraft.jsch.JSch;
+
+import com.jcraft.jsch.Session;
+
+import org.apache.commons.io.IOUtils;
+
+import java.io.InputStream;
+
+/**
+ * Created by smit on 4/1/22.
+ */
+
+public class SSHConnectionUtil
+{
+    private Session session = null;
+
+    private final int port;
+
+    private final int timeout;
+
+    private final String hostIp;
+
+    private final String username;
+
+    private final String password;
+
+    private final String keyFilePath;
+
+    private final String passPhrase;
+
+    String NEW_LINE = System.lineSeparator();
+
+    private static final Logger _logger = new Logger();
+
+    public Session getSession()
+    {
+        return this.session;
+    }
+
+    public static SSHConnectionUtil getSSHObject(String hostIp, int port, String username, String password, int timeOut)
+    {
+        return new SSHConnectionUtil(hostIp, port, username, password, timeOut);
+    }
+
+    public static SSHConnectionUtil getSSHObject(String hostIp, String username, String password, int timeOut)
+    {
+        return new SSHConnectionUtil(hostIp, username, password, timeOut);
+    }
+
+    public SSHConnectionUtil(String hostIp, String username, String password)
+    {
+
+        this(hostIp, 22, username, password, null, null, 60);
+    }
+
+    public SSHConnectionUtil(String hostIp, String username, String password, int timeout)
+    {
+
+        this(hostIp, 22, username, password, null, null, timeout);
+    }
+
+    public SSHConnectionUtil(String hostIp, int port, String username, String password, int timeout)
+    {
+
+        this(hostIp, port, username, password, null, null, timeout);
+    }
+
+    public SSHConnectionUtil(String hostIp, int port, String username, String password, String keyFilePath, String passPhrase, int timeout)
+    {
+        this.hostIp = hostIp;
+
+        this.port = port;
+
+        this.username = username;
+
+        this.keyFilePath = keyFilePath;
+
+        this.passPhrase = passPhrase;
+
+        this.timeout = timeout;
+
+        this.password = password;
+    }
+
+    public boolean init()
+    {
+        boolean connect = false;
+
+        try
+        {
+            if (keyFilePath != null && keyFilePath.trim().length() != 0)
+            {
+                connect = connectUsingKey();
+            }
+            else
+            {
+                connect = connect();
+            }
+
+            if (connect)
+            {
+                _logger.debug("connected to " + hostIp);
+            }
+            else
+            {
+                _logger.warn("failed to connect to " + hostIp);
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("still now connected!", exception);
+        }
+        return connect;
+    }
+
+    public void destroy()
+    {
+        try
+        {
+            disconnect();
+        }
+        catch (Exception exception)
+        {
+            _logger.error("still not disconnect!", exception);
+        }
+    }
+
+    public boolean reInit()
+    {
+        boolean result = false;
+
+        try
+        {
+            destroy();
+
+            result = init();
+        }
+        catch (Exception exception)
+        {
+            _logger.error("not destroy!", exception);
+        }
+
+        return result;
+    }
+
+    private boolean connect()
+    {
+        boolean connected = false;
+
+        try
+        {
+            _logger.debug("checking connection with " + hostIp + " and port " + port);
+
+            JSch jschObject = new JSch();
+
+            session = jschObject.getSession(username, hostIp, port);
+
+            if (password != null && password.trim().length() > 0)
+            {
+                session.setPassword(password);
+            }
+
+            session.setConfig("StrictHostKeyChecking", "no");
+
+            session.connect(timeout * 1000);
+
+            session.setTimeout(timeout * 1000);
+
+            if (session.isConnected())
+            {
+                connected = true;
+
+                _logger.debug(hostIp + " - connection established!");
+            }
+            else
+            {
+                _logger.warn(hostIp + " - connection failed");
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("still not connect...", exception);
+        }
+
+        return connected;
+    }
+
+    private boolean connectUsingKey()
+    {
+        _logger.debug("checking connection with " + hostIp + " and port" + port + "");
+
+        boolean connected = false;
+
+        try
+        {
+            JSch jschObect = new JSch();
+
+            session = jschObect.getSession(username, hostIp, port);
+
+            if (passPhrase != null)
+            {
+                jschObect.addIdentity(keyFilePath, passPhrase);
+            }
+            else
+            {
+                jschObect.addIdentity(keyFilePath);
+            }
+
+            session.setConfig("StrictHostKeyChecking", "no");
+
+            session.connect(timeout * 1000);
+
+            session.setTimeout(timeout * 1000);
+
+            if (session.isConnected())
+            {
+                connected = true;
+
+                _logger.debug(hostIp + " - connection done!");
+            }
+            else
+            {
+                _logger.warn(hostIp + " - connection failed!");
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("connect using key failed!", exception);
+        }
+
+        return connected;
+    }
+
+    private void disconnect()
+    {
+        try
+        {
+            if (session != null)
+            {
+                session.disconnect();
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.warn("disconnect problem!");
+        }
+    }
+
+    public String executeCommand(String command)
+    {
+        String execute = null;
+
+        try
+        {
+            execute = executeCommand(command, true);
+        }
+        catch (Exception exception)
+        {
+            _logger.error("command execution failed!", exception);
+        }
+
+        return execute;
+    }
+
+    public String executeCommand(String command, boolean wait)
+    {
+        _logger.debug(this.hostIp + " - executing command " + command);
+
+        ChannelExec channel = null;
+
+        InputStream inputStream = null;
+
+        StringBuilder output = new StringBuilder();
+
+        try
+        {
+            if (this.session != null)
+            {
+                channel = (ChannelExec) this.session.openChannel("exec");
+
+                channel.setCommand(command);
+
+                channel.setInputStream(null);
+
+                inputStream = channel.getInputStream();
+
+                channel.connect();
+
+                _logger.debug(this.hostIp + " - checking channel connection...");
+
+                if (channel.isConnected())
+                {
+                    _logger.debug(this.hostIp + " - channel is currently connected...");
+
+                    if (wait)
+                    {
+                        output.append(IOUtils.toString(inputStream));
+
+                        output.append(NEW_LINE);
+
+                        _logger.debug(this.hostIp + " - command output -> " + output.toString());
+                    }
+                }
+                else
+                {
+                    _logger.warn(this.hostIp + " - channel is not connected!");
+                }
+            }
+            else
+            {
+                _logger.warn(this.hostIp + " - session is expired!");
+            }
+
+            if (inputStream != null)
+            {
+                inputStream.close();
+
+                _logger.debug(this.hostIp + " - channel is closed for communication!");
+            }
+
+            if (channel != null && !channel.isClosed())
+            {
+                channel.disconnect();
+
+                _logger.debug(this.hostIp + " - channel is disconnected!");
+            }
+
+        }
+        catch (Exception exception)
+        {
+            _logger.error("command not executed properly!", exception);
+        }
+
+        return output.toString();
+    }
+
+    public static SSHConnectionUtil getNewSSHObject(String host, int port, String username, String password, int timeout)
+    {
+        _logger.info("SSH to hostIp - " + host);
+
+        SSHConnectionUtil sshUtil = null;
+
+        try
+        {
+            sshUtil = new SSHConnectionUtil(host, port, username, password, timeout);
+
+            if(!sshUtil.init())
+            {
+                _logger.info("SSH failed for the hostIp " + host);
+
+                return null;
+            }
+
+            _logger.info("Successful SSH to hostIp " + host);
+        }
+        catch (Exception exception)
+        {
+            _logger.info("SSH failed for the hostIp " + host);
+
+            _logger.error("failed for get SSH object", exception);
+
+            sshUtil = null;
+        }
+
+        return sshUtil;
+    }
+}
+

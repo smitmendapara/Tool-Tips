@@ -1,0 +1,414 @@
+
+
+private static void setProperties(HashMap<Short, Object> properties, Connection connection)
+    {
+        HashMap<String, ArrayList<String>> dataCollection = new HashMap<>();
+
+        selectStatement(properties, connection);
+
+        insertStatement(properties, connection, dataCollection);
+
+        updateStatement(properties, connection);
+
+        deleteStatement(properties, connection);
+
+    }
+
+    private static void deleteStatement(HashMap<Short, Object> properties, Connection connection)
+    {
+        properties.put(CommonConstant_DAO.DATABASE_CONNECTION, connection);
+
+        properties.put(CommonConstant_DAO.TABLE_NAME, "TB_USER");
+
+        properties.put(CommonConstant_DAO.DATABASE_CONDITION, "WHERE ID = 1");
+
+        properties.put(CommonConstant_DAO.DATABASE_OPERATION, CommonConstant_DAO.DELETE);
+    }
+
+    private static void updateStatement(HashMap<Short, Object> properties, Connection connection)
+    {
+        properties.put(CommonConstant_DAO.DATABASE_CONNECTION, connection);
+
+        properties.put(CommonConstant_DAO.TABLE_NAME, "TB_USER");
+
+        properties.put(CommonConstant_DAO. UPDATE_COLUMN_NAME, "USER = 'Dharm'");
+
+        properties.put(CommonConstant_DAO.DATABASE_CONDITION, "WHERE ID = 2");
+
+        properties.put(CommonConstant_DAO.DATABASE_OPERATION, CommonConstant_DAO.UPDATE);
+    }
+
+    private static void insertStatement(HashMap<Short, Object> properties, Connection connection, HashMap<String, ArrayList<String>> dataCollection)
+    {
+        properties.put(CommonConstant_DAO.DATABASE_CONNECTION, connection);
+
+        properties.put(CommonConstant_DAO.COLUMN_NAME, "ID,USER");
+
+        properties.put(CommonConstant_DAO.TABLE_NAME, "TB_USER");
+
+        properties.put(CommonConstant_DAO.DATABASE_OPERATION, CommonConstant_DAO.INSERT);
+
+        insertLocalData(properties, dataCollection);
+    }
+
+    private static void insertLocalData(HashMap<Short, Object> properties, HashMap<String, ArrayList<String>> dataCollection)
+    {
+        ArrayList<String> data = new ArrayList<>();
+
+        data.add("4, 'harsh', 'kaneria'");
+
+        data.add("5, 'kishan', 'khirsariya'");
+
+        data.add("6, 'parth', 'aghera'");
+
+        data.add("7, 'harsh', 'boda'");
+
+        dataCollection.put("TB_USER", data);
+
+        properties.put(CommonConstant_DAO.TABLE_DATA, dataCollection);
+    }
+
+    private static void selectStatement(HashMap<Short, Object> properties, Connection connection)
+    {
+        properties.put(CommonConstant_DAO.DATABASE_CONNECTION, connection);
+
+        properties.put(CommonConstant_DAO.COLUMN_NAME, "ID,USER");
+
+        properties.put(CommonConstant_DAO.TABLE_NAME, "TB_USER");
+
+        properties.put(CommonConstant_DAO.DATABASE_OPERATION, CommonConstant_DAO.SELECT);
+    }
+
+public static boolean databaseConfigure()
+    {
+        HashMap<Short, Object> properties = new HashMap<>();
+
+        boolean result = true;
+
+        try
+        {
+            System.out.println();
+
+            System.out.println("---------------------------- load h2 Database ------------------------------");
+
+            Connection connection = _dao.getConnection();
+
+            setProperties(properties, connection);
+
+            System.out.println();
+
+            if (_dao.configureDB(properties))
+            {
+                System.out.println("successfully configured!");
+
+                System.out.println();
+            }
+
+        }
+        catch (Exception exception)
+        {
+            _logger.error("something went wrong on the configuring h2 database server!", exception);
+
+            result = false;
+        }
+
+        return result;
+    }
+
+public boolean configureDB(HashMap<Short, Object> properties)
+    {
+        boolean status = true;
+
+        String columns = "*";
+
+        String update_columns = "";
+
+        String condition = "";
+
+        if (properties.containsKey(CommonConstant_DAO.COLUMN_NAME))
+        {
+           columns = String.valueOf(properties.remove(CommonConstant_DAO.COLUMN_NAME));
+        }
+
+        if (properties.containsKey(CommonConstant_DAO.UPDATE_COLUMN_NAME))
+        {
+            update_columns = String.valueOf(properties.remove(CommonConstant_DAO.UPDATE_COLUMN_NAME));
+        }
+
+        if (properties.containsKey(CommonConstant_DAO.DATABASE_CONDITION))
+        {
+            condition = String.valueOf(properties.remove(CommonConstant_DAO.DATABASE_CONDITION));
+        }
+
+        short db_operation = Short.parseShort(String.valueOf(properties.get(CommonConstant_DAO.DATABASE_OPERATION)));
+
+        connection = (Connection) properties.get(CommonConstant_DAO.DATABASE_CONNECTION);
+
+        String tableName = String.valueOf(properties.get(CommonConstant_DAO.TABLE_NAME));
+
+        HashMap<String, ArrayList<String>> tableData;
+
+        try
+        {
+            switch (db_operation)
+            {
+                case CommonConstant_DAO.SELECT : properties.put(CommonConstant_DAO.RESULT_SET, executeSELECT(connection, tableName, condition, columns));
+
+                                                 break;
+
+                case CommonConstant_DAO.INSERT : tableData = (HashMap<String, ArrayList<String>>) properties.get(CommonConstant_DAO.TABLE_DATA);
+
+                                                 if (connection != null)
+                                                 {
+                                                     for (String table : tableData.keySet())
+                                                     {
+                                                         for (String tableRow : tableData.get(table))
+                                                         {
+                                                             properties.put(CommonConstant_DAO.COLUMN_AUTO_ID, executeINSERT(connection, table, tableRow));
+                                                         }
+                                                     }
+                                                 }
+
+                                                 break;
+
+                case CommonConstant_DAO.UPDATE : properties.put(CommonConstant_DAO.QUERY_STATUS, executeUPDATE(connection, tableName, condition, update_columns));
+
+                                                 break;
+
+                case CommonConstant_DAO.DELETE : executeDELETE(connection, tableName, condition);
+
+                                                 break;
+            }
+
+        }
+        catch (Exception exception)
+        {
+            exception.printStackTrace();
+
+            status = false;
+        }
+
+        return status;
+    }
+
+    private void executeDELETE(Connection connection, String tableName, String condition)
+    {
+        String query;
+
+        Statement statement = null;
+
+        try
+        {
+            if (!connection.isClosed())
+            {
+                statement = connection.createStatement();
+
+                if (statement != null)
+                {
+                    query = "DELETE FROM " + tableName + " " + condition;
+
+                    statement.executeUpdate(query);
+
+                    statement.close();
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("delete query invalid", exception);
+        }
+        finally
+        {
+            try
+            {
+                if (statement != null && !statement.isClosed())
+                {
+                    statement.close();
+                }
+            }
+            catch (Exception ignored)
+            {
+
+            }
+        }
+    }
+
+    private Object executeUPDATE(Connection connection, String tableName, String condition, String update_columns)
+    {
+        boolean result = false;
+
+        Statement statement = null;
+
+        String query;
+
+        try
+        {
+            if (!connection.isClosed())
+            {
+                statement = connection.createStatement();
+
+                if (statement != null)
+                {
+                    query = "UPDATE " + tableName + " SET " + update_columns + " " + condition;
+
+                    statement.executeUpdate(query);
+
+                    result = true;
+
+                    statement.close();
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("update query invalid", exception);
+        }
+        finally
+        {
+            try
+            {
+                if (statement != null && !statement.isClosed())
+                {
+                    statement.close();
+                }
+            }
+            catch (Exception ignored)
+            {
+
+            }
+        }
+
+        return result;
+    }
+
+    private Object executeINSERT(Connection connection, String tableName, String tableRow)
+    {
+        String query;
+
+        Statement statement = null;
+
+        ResultSet resultSet;
+
+        int generatedId = 0;
+
+        int affectedRows;
+
+        try
+        {
+            if (!connection.isClosed())
+            {
+                statement = connection.createStatement();
+
+                if (statement != null)
+                {
+
+                    query = "INSERT INTO " + tableName + " VALUES (" + tableRow + ")";
+
+                    affectedRows = statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
+
+                    if (affectedRows != 0)
+                    {
+                        resultSet = statement.getGeneratedKeys();
+
+                        if (resultSet.next())
+                        {
+                            generatedId = resultSet.getInt(1);
+                        }
+                    }
+
+                    statement.close();
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("insert query invalid!", exception);
+        }
+        finally
+        {
+            try
+            {
+                if (statement != null && !statement.isClosed())
+                {
+                    statement.close();
+                }
+            }
+            catch (Exception ignored)
+            {
+
+            }
+        }
+
+        return generatedId;
+    }
+
+    private Object executeSELECT(Connection connection, String tableName, String condition, String columns)
+    {
+        List<HashMap<String, Object>> table = null;
+
+        HashMap<String, Object> row;
+
+        Statement statement = null;
+
+        ResultSetMetaData metaData;
+
+        try
+        {
+            if (!connection.isClosed())
+            {
+                statement = connection.createStatement();
+
+                if (statement != null)
+                {
+                    ResultSet resultSet = statement.executeQuery("SELECT " + columns + " FROM " + tableName + " " + condition);
+
+                    while (resultSet.next())
+                    {
+                        if (table == null)
+                        {
+                            table = new ArrayList<>();
+                        }
+
+                        row = new HashMap<>();
+
+                        metaData = resultSet.getMetaData();
+
+                        if (metaData != null)
+                        {
+                            for (int index = 1; index < metaData.getColumnCount() + 1; index++)
+                            {
+                                if (resultSet.getObject(index) != null && resultSet.getObject(index).toString().trim().length() > 0 && !resultSet.getObject(index).toString().equalsIgnoreCase(CommonConstant.NULL))
+                                {
+                                    row.put(metaData.getColumnName(index), resultSet.getObject(index));
+                                }
+                            }
+
+                            table.add(row);
+                        }
+
+                    }
+
+                    statement.close();
+
+                    connection.close();
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error("select query invalid...", exception);
+        }
+        finally
+        {
+            try
+            {
+                statement.close();
+            }
+            catch (Exception ignored)
+            {
+
+            }
+        }
+
+        return table;
+    }
