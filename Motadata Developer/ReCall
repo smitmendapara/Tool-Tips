@@ -1,0 +1,43 @@
+
+-------------------------- Sheet -----------------------------------
+
+-> java
+
+-> basic networking 
+
+-> data structure
+
+-> multithreading and also their examples which i performed
+
+-> JConsole and JVisualVM
+
+-> socket programming and also their examples which i performed
+
+-> jms 
+
+-> javascript with jquery
+
+-> queries
+
+-> project
+
+----------------------------- Pending -----------------------------------
+
+-> tcpdump, threaddump, heapdump, snmp
+
+-> no of thread run how we identify which thread is currently run or wait (JVisualVM)
+
+-> run application with JVisualVM
+
+-> jmap and jstack	
+
+-> ssl certificate
+
+------------------------------------------------ Data Structure Points ----------------------------------
+
+-> loading factor
+
+-> how hashset internally use hashmap
+
+-> how to use collection synchronized except hashtable 
+

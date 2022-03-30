@@ -1,0 +1,160 @@
+----------------------------------------------- Bug 1 ---------------------------------------------------
+
+Solution : comment setLastScanTime(new Date()) line
+
+traceOrgSubnetDetail.setLastScanTime(new Date());
+
+----------------------------------------------- Bug 4 ---------------------------------------------------
+
+Solution : private static void setLogoImage()
+    {
+        BufferedImage logoImage = null;
+
+        try
+        {
+            File file = new File(TraceOrgCommonConstants.CURRENT_DIR +TraceOrgCommonConstants.PATH_SEPARATOR+"Images");
+
+            if (!file.exists())
+            {
+                file.mkdirs();
+            }
+
+            File readLogoImageFilePath = new File(TraceOrgCommonConstants.CURRENT_DIR +TraceOrgCommonConstants.PATH_SEPARATOR+"/src/main/webapp/images/logo.png");
+
+            logoImage = ImageIO.read(readLogoImageFilePath);
+
+            File writeLogoImageFilePath = new File(TraceOrgCommonConstants.CURRENT_DIR +TraceOrgCommonConstants.PATH_SEPARATOR+"Images/logo.png");
+
+            ImageIO.write(logoImage, "png", writeLogoImageFilePath);
+        }
+        catch (Exception exception)
+        {
+            _logger.warn(exception);
+        }
+    }	
+
+setLogoImage(); // IPAM-125 bug 4
+
+------------------------------------------------ Bug 2 ---------------------------------------------------
+
+public void execute(JobExecutionContext context) throws JobExecutionException
+    {
+        try
+        {
+            TraceOrgSubnetUtil traceOrgSubnetUtil = new TraceOrgSubnetUtil();
+
+            TraceOrgCiscoDHCPServerUtil traceOrgCiscoDHCPServerUtil = new TraceOrgCiscoDHCPServerUtil();
+
+            TraceOrgWindowsDhcpServerUtil traceOrgWindowsDhcpServerUtil = new TraceOrgWindowsDhcpServerUtil();
+
+            JobDataMap dataMap = context.getMergedJobDataMap();
+
+            TraceOrgSubnetDetails traceOrgSubnetDetails = (TraceOrgSubnetDetails) dataMap.get("subnetDetails");
+
+            TraceOrgCommonUtil traceOrgCommonUtil = (TraceOrgCommonUtil) dataMap.get(TraceOrgCommonConstants.TRACE_ORG_COMMON_UTIL);
+
+            TraceOrgCommonUtil.m_scanStatus = new AtomicInteger(1);
+
+            TraceOrgCommonUtil.m_scanSubnet.put("jobKey",traceOrgSubnetDetails.getSubnetName());
+
+            _logger.info(traceOrgSubnetDetails.getSubnetAddress()+" Scanning");
+
+            TraceOrgService traceOrgService = (TraceOrgService) dataMap.get(TraceOrgCommonConstants.TRACE_ORG_SERVICE);
+
+            if (traceOrgSubnetDetails != null && traceOrgService.isExist(TraceOrgCommonConstants.TRACE_ORG_SUBNET_DETAILS,"id",traceOrgSubnetDetails.getId().toString()))
+            {
+                if(traceOrgSubnetDetails.getType().equalsIgnoreCase("Normal"))
+                {
+                    traceOrgSubnetUtil.getIPFromSubnet(traceOrgSubnetDetails,traceOrgService);
+                }
+                else if(traceOrgSubnetDetails.getType().equalsIgnoreCase(TraceOrgCommonConstants.CISCO))
+                {
+                    traceOrgCiscoDHCPServerUtil.getNetworkInterfaceForSpecificSubnet(traceOrgSubnetDetails,traceOrgService);
+                }
+                else if(traceOrgSubnetDetails.getType().equalsIgnoreCase(TraceOrgCommonConstants.WINDOWS))
+                {
+                    traceOrgWindowsDhcpServerUtil.getIpDetailsBySubnet(traceOrgSubnetDetails,traceOrgService);
+                }
+
+                List<TraceOrgSubnetIpDetails> totalSubnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) traceOrgService.commonQuery(TraceOrgCommonConstants.TRACE_ORG_SUBNET_IP_DETAILS +" where subnetId = '"+traceOrgSubnetDetails.getId()+"' and  deactiveStatus = false");
+
+                List<TraceOrgSubnetIpDetails> availableSubnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) traceOrgService.commonQuery(TraceOrgCommonConstants.SUBNET_IP_DETAILS_BY_STATUS_AND_SUBNET_ID.replace(TraceOrgCommonConstants.STATUS_VALUE,TraceOrgCommonConstants.AVAILABLE).replace(TraceOrgCommonConstants.SUBNET_ID_VALUE, TraceOrgCommonUtil.getStringValue(traceOrgSubnetDetails.getId()))+" and  deactiveStatus = false");
+
+                List<TraceOrgSubnetIpDetails> usedSubnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) traceOrgService.commonQuery(TraceOrgCommonConstants.SUBNET_IP_DETAILS_BY_STATUS_AND_SUBNET_ID.replace(TraceOrgCommonConstants.STATUS_VALUE,TraceOrgCommonConstants.USED).replace(TraceOrgCommonConstants.SUBNET_ID_VALUE,TraceOrgCommonUtil.getStringValue(traceOrgSubnetDetails.getId())) +" and  deactiveStatus = false");
+
+                List<TraceOrgSubnetIpDetails> transientSubnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) traceOrgService.commonQuery(TraceOrgCommonConstants.SUBNET_IP_DETAILS_BY_STATUS_AND_SUBNET_ID.replace(TraceOrgCommonConstants.STATUS_VALUE,TraceOrgCommonConstants.TRANSIENT).replace(TraceOrgCommonConstants.SUBNET_ID_VALUE,TraceOrgCommonUtil.getStringValue(traceOrgSubnetDetails.getId())) +" and  deactiveStatus = false");
+
+                traceOrgSubnetDetails.setAvailableIp((long) availableSubnetIpDetailsList.size());
+
+                traceOrgSubnetDetails.setUsedIp((long) usedSubnetIpDetailsList.size());
+
+                traceOrgSubnetDetails.setTransientIp((long) transientSubnetIpDetailsList.size());
+
+                traceOrgSubnetDetails.setTotalIp((long)totalSubnetIpDetailsList.size());
+
+                traceOrgSubnetDetails.setLastScanTime(new Date());
+
+                traceOrgSubnetDetails.setModifiedDate(new Date());
+
+                traceOrgService.insert(traceOrgSubnetDetails); // CHECK IT
+
+                if(traceOrgSubnetDetails.getUsedIpPercentage() > 80)
+                {
+                    TraceOrgEvent traceOrgEvent =  new TraceOrgEvent();
+
+                    traceOrgEvent.setTimestamp(new Date());
+
+                    if(traceOrgService.findByUserName(traceOrgSubnetDetails.getCreatedBy())!=null)
+                    {
+                        traceOrgEvent.setDoneBy(traceOrgService.findByUserName(traceOrgSubnetDetails.getCreatedBy()));
+
+                        traceOrgEvent.setEventContext("Subnet "+traceOrgSubnetDetails.getSubnetAddress()+" Utilization goes above 80 Percentage in IP Address Manager Scanned by "+traceOrgSubnetDetails.getCreatedBy());
+                    }
+                    else
+                    {
+                        traceOrgEvent.setEventContext("Subnet "+traceOrgSubnetDetails.getSubnetAddress()+" Utilization goes above 80 Percentage in IP Address Manager");
+                    }
+
+                    traceOrgEvent.setEventType("Subnet Utilization");
+
+                    traceOrgEvent.setSeverity(0);
+
+                    traceOrgService.insert(traceOrgEvent);
+                }
+
+                //EVENT LOG
+                TraceOrgEvent traceOrgEvent =  new TraceOrgEvent();
+
+                traceOrgEvent.setTimestamp(new Date());
+
+                if (traceOrgService.findByUserName(traceOrgSubnetDetails.getCreatedBy()) !=null )
+                {
+                    traceOrgEvent.setDoneBy(traceOrgService.findByUserName(traceOrgSubnetDetails.getCreatedBy()));
+
+                    traceOrgEvent.setEventContext("Subnet "+traceOrgSubnetDetails.getSubnetAddress()+" is scanned in IP Address Manager by "+traceOrgSubnetDetails.getCreatedBy());
+                }
+                else
+                {
+                    traceOrgEvent.setEventContext("Subnet "+traceOrgSubnetDetails.getSubnetAddress()+" is scanned in IP Address Manager by Scheduler");
+                }
+
+                _logger.debug("Subnet "+traceOrgSubnetDetails.getSubnetAddress()+" is scanned");
+
+                traceOrgEvent.setEventType("Scan Subnet");
+
+                traceOrgEvent.setSeverity(2);
+
+                traceOrgService.insert(traceOrgEvent);
+
+                TraceOrgCommonUtil.m_scanSubnet.put("jobKey","");
+
+                TraceOrgCommonUtil.m_scanStatus = new AtomicInteger(0);
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error(exception);
+        }
+
+    }
+

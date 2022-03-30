@@ -1,0 +1,61 @@
+List<TraceOrgSubnetIpDetails> availableSubnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) this.traceOrgService.commonQuery("",TraceOrgCommonConstants.SUBNET_IP_DETAILS_BY_STATUS_AND_SUBNET_ID.replace(TraceOrgCommonConstants.STATUS_VALUE,TraceOrgCommonConstants.AVAILABLE).replace(TraceOrgCommonConstants.SUBNET_ID_VALUE,TraceOrgCommonUtil.getStringValue(traceOrgSubnetDetails.getId())));
+
+List<TraceOrgSubnetIpDetails> transientSubnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) this.traceOrgService.commonQuery("",TraceOrgCommonConstants.SUBNET_IP_DETAILS_BY_STATUS_AND_SUBNET_ID.replace(TraceOrgCommonConstants.STATUS_VALUE,TraceOrgCommonConstants.TRANSIENT).replace(TraceOrgCommonConstants.SUBNET_ID_VALUE,TraceOrgCommonUtil.getStringValue(traceOrgSubnetDetails.getId())));
+
+
+            /*Date currentDate = new Date();
+
+            for(TraceOrgSubnetDetails traceOrgSubnetDetails : traceOrgSubnetDetailList)
+            {
+                long scanTimeDifferent = 0;
+
+                if(traceOrgSubnetDetails.getLastScanTime() != null)
+                {
+                    scanTimeDifferent = (currentDate.getTime() - new Date(traceOrgSubnetDetails.getLastScanTime()).getTime()) /3600000;
+                }
+                else if(traceOrgSubnetDetails.getCreatedDate() != null)
+                {
+                    scanTimeDifferent = (currentDate.getTime() - new Date(traceOrgSubnetDetails.getCreatedDate()).getTime()) /3600000;
+                }
+
+                if(traceOrgSubnetDetails.getScheduleHour() !=null && traceOrgSubnetDetails.getScheduleHour() > 0 && scanTimeDifferent >= traceOrgSubnetDetails.getScheduleHour())
+                {
+                    if(TraceOrgCommonUtil.getSubnetScanStatus() == 0)
+                    {
+                        if (TraceOrgCommonUtil.quartzThread != null)
+                        {
+                            HashMap<String,Object> mapData = new HashMap<>();
+
+                            mapData.put("subnetDetails",traceOrgSubnetDetails);
+
+                            mapData.put(TraceOrgCommonConstants.TRACE_ORG_SERVICE,this.traceOrgService);
+
+                            mapData.put(TraceOrgCommonConstants.TRACE_ORG_COMMON_UTIL,this.traceOrgCommonUtil);
+
+                            mapData.put(TraceOrgCommonConstants.ACCESSTOKEN,null);
+
+                            JobKey jobKey = JobKey.jobKey(TraceOrgCommonConstants.SCAN_SUBNET);
+
+                            JobDetail job = JobBuilder.newJob(TraceOrgSubnetControllerExecuteJob.class).withIdentity(jobKey).usingJobData(new JobDataMap(mapData)).storeDurably().build();
+
+                            TraceOrgCommonUtil.quartzThread.addJob(job, true);
+
+                            TraceOrgCommonUtil.quartzThread.triggerJob(jobKey);
+                        }
+                    }
+                    else
+                    {
+                        HashMap<String,Object> subnetDetails = new HashMap<>();
+
+                        subnetDetails.put("subnetDetails",traceOrgSubnetDetails);
+
+                        subnetDetails.put(TraceOrgCommonConstants.TRACE_ORG_SERVICE,this.traceOrgService);
+
+                        subnetDetails.put(TraceOrgCommonConstants.TRACE_ORG_COMMON_UTIL,this.traceOrgCommonUtil);
+
+                        subnetDetails.put(TraceOrgCommonConstants.SCAN_TYPE,TraceOrgCommonConstants.SUBNET_SCAN);
+
+                        TraceOrgCommonUtil.m_scheduleScanSubnet.put(traceOrgSubnetDetails.getSubnetAddress(),subnetDetails);
+                    }
+                }
+            }*/

@@ -1,0 +1,1555 @@
+Server : smb://172.16.10.10/mindarray-builds/IPAM	
+
+if condition : this.traceOrgService.isExist(TraceOrgCommonConstants.TRACE_ORG_SUBNET_DETAILS,"id",id.toString()
+
+@RequestMapping(value = TraceOrgCommonConstants.EXPORT_CSV_SUBNET_IP_REST_URL+"{id}", method = RequestMethod.GET)
+    public ResponseEntity<?> exportCsvSubnetIp(@PathVariable(TraceOrgCommonConstants.ID) String id, HttpServletRequest request)
+    {
+        Response response = new Response();
+
+        if(id != null)
+        {
+            try
+            {
+                String accessToken = request.getHeader(TraceOrgCommonConstants.ACCESSTOKEN);
+
+                if(traceOrgCommonUtil.checkToken(accessToken))
+                {
+                    String[] subnetIpIdString = id.split(",");
+
+                    if(this.traceOrgService.isExist(TraceOrgCommonConstants.TRACE_ORG_SUBNET_DETAILS,"id",id.toString()))
+                    {
+                        List<TraceOrgSubnetIpDetails> subnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) this.traceOrgService.commonQuery("",TraceOrgCommonConstants.SUBNET_IP_BY_SUBNET_ID.replace(TraceOrgCommonConstants.SUBNET_ID_VALUE,subnetIpIdString[0]));
+
+                        List<String> temporySubnetDetailsList = new ArrayList<>();
+
+                        for (int i = 0; i < subnetIpIdString.length; i++)
+                        {
+                            temporySubnetDetailsList.add(subnetIpIdString[i]);
+                        }
+
+                        if (subnetIpDetailsList != null && !subnetIpDetailsList.isEmpty())
+                        {
+                            String url = traceOrgCommonUtil.exportSubnetIpCsv(request,subnetIpDetailsList, temporySubnetDetailsList);
+
+                            response.setSuccess(TraceOrgCommonConstants.TRUE);
+
+                            response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+
+                            response.setData(url);
+                        }
+                        else
+                        {
+                            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                            response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+
+                            response.setMessage(TraceOrgMessageConstants.NO_DATA_AVAILABLE);
+                        }
+                    }
+                    else
+                    {
+                        response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                        response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+                    }
+                }
+                else
+                {
+                    response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                    response.setMessage(TraceOrgMessageConstants.TOKEN_NOT_RECOGNISED);
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger.error(exception);
+
+                response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+            }
+        }
+        else
+        {
+            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+            response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+-------------------------------------------------------- IPAM-126 ------------------------------------------------------------------------
+
+--------------------------------------------------- Before Improvement --------------------------------------------------------
+
+public ResponseEntity<?> exportPdfSubnetIp(@PathVariable(TraceOrgCommonConstants.ID) Long id, HttpServletRequest request)
+    {
+        Response response = new Response();
+
+        if(id != null)
+        {
+            try
+            {
+                String accessToken = request.getHeader(TraceOrgCommonConstants.ACCESSTOKEN);
+
+                if(traceOrgCommonUtil.checkToken(accessToken))
+                {
+                    if(this.traceOrgService.isExist(TraceOrgCommonConstants.TRACE_ORG_SUBNET_DETAILS,"id",id.toString()))
+                    {
+                        List<TraceOrgSubnetIpDetails> subnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) this.traceOrgService.commonQuery("",TraceOrgCommonConstants.SUBNET_IP_BY_SUBNET_ID.replace(TraceOrgCommonConstants.SUBNET_ID_VALUE,id.toString()));
+
+                        if (subnetIpDetailsList != null && !subnetIpDetailsList.isEmpty()) {
+
+                            try
+                            {
+                                LinkedHashSet<String> columns = new LinkedHashSet<String>()
+                                {{
+                                    add("IP Address");
+
+                                    add("Status");
+
+                                    add("Scope");
+
+                                    add("Mac Address");
+
+                                    add("Vendor");
+
+                                    add("IP To DNS");
+
+                                    add("DNS To IP");
+
+                                    add("Rogue");
+
+                                    add("Last Alive Time");
+
+                                }};
+
+                                List<HashMap<String, Object>> ipSummaryObject = new ArrayList<>();
+
+                                Integer availableIp = 0;
+
+                                Integer usedIp = 0;
+
+                                Integer transientIp = 0;
+
+                                List<Object> pdfResults = new ArrayList<>();
+
+                                List<Object> pdfResult;
+
+                                String subnetAddress = null;
+
+                                for (TraceOrgSubnetIpDetails traceOrgSubnetIpDetail : subnetIpDetailsList)
+                                {
+
+                                    if(traceOrgSubnetIpDetail.getStatus().equalsIgnoreCase(TraceOrgCommonConstants.AVAILABLE))
+                                    {
+                                        availableIp++;
+                                    }
+                                    else if(traceOrgSubnetIpDetail.getStatus().equalsIgnoreCase(TraceOrgCommonConstants.USED))
+                                    {
+                                        usedIp++;
+                                    }
+                                    else if(traceOrgSubnetIpDetail.getStatus().equalsIgnoreCase(TraceOrgCommonConstants.TRANSIENT))
+                                    {
+                                        transientIp++;
+                                    }
+
+                                    pdfResult = new ArrayList<>();
+
+                                    subnetAddress = traceOrgSubnetIpDetail.getSubnetId().getSubnetAddress();
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getIpAddress());
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getStatus());
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getSubnetId().getSubnetName());
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getMacAddress());
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getDeviceType());
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getIpToDns());
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getDnsToIp());
+
+                                    if(traceOrgSubnetIpDetail.isRogueStatus())
+                                        pdfResult.add("Yes");
+                                    else
+                                        pdfResult.add("No");
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getLastAliveTime());
+
+                                    pdfResults.add(pdfResult);
+                                }
+
+                                HashMap<String, Object> results = new HashMap<>();
+
+                                HashMap<String, Object> availableIpSummary = new HashMap<>();
+
+                                availableIpSummary.put("status","Available (%)");
+
+                                availableIpSummary.put("value",new DecimalFormat("#.00").format((double)(availableIp*100)/subnetIpDetailsList.size()));
+
+                                HashMap<String, Object> usedIpSummary = new HashMap<>();
+
+                                usedIpSummary.put("status","Used (%)");
+
+                                usedIpSummary.put("value",new DecimalFormat("#.00").format((double)(usedIp*100)/subnetIpDetailsList.size()));
+
+                                HashMap<String, Object> transientIpSummary = new HashMap<>();
+
+                                transientIpSummary.put("status","Transient (%)");
+
+                                transientIpSummary.put("value",new DecimalFormat("#.00").format((double)(transientIp*100)/subnetIpDetailsList.size()));
+
+                                ipSummaryObject.add(availableIpSummary);
+
+                                ipSummaryObject.add(usedIpSummary);
+
+                                ipSummaryObject.add(transientIpSummary);
+
+                                results.put("ipSummary", ipSummaryObject);
+
+                                results.put("grid-result", pdfResults);
+
+                                results.put("columns", columns);
+
+                                results.put("logFor", "IP_REPORT");
+
+                                List<HashMap<String, Object>> visualizationResults = new ArrayList<>();
+
+                                visualizationResults.add(results);
+
+                                HashMap<String, Object> gridReport = new HashMap<>();
+
+                                gridReport.put("Title", "Subnet IP Details "+TraceOrgCommonConstants.LEFT_SQUARE_BRACKET + subnetAddress + TraceOrgCommonConstants.RIGHT_SQUARE_BRACKET);
+
+                                String fileName = "Subnet IP Details "+TraceOrgCommonConstants.VISUAL_DATE_FORMAT.format(new Date())+".pdf";
+
+                                fileName = fileName.replace(" ","_").replace(":","_").replace(",","");
+
+                                TraceOrgPDFBuilder.addGridReport(1, visualizationResults, new HashMap<String, Object>(), fileName, gridReport);
+
+                                response.setData(fileName);
+
+                                response.setSuccess(TraceOrgCommonConstants.TRUE);
+
+                                response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+                            }
+                            catch (Exception exception)
+                            {
+                                _logger.error(exception);
+
+                                response.setSuccess(TraceOrgCommonConstants.FALSE);
+                            }
+                        }
+                        else
+                        {
+                            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                            response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+
+                            response.setMessage(TraceOrgMessageConstants.NO_DATA_AVAILABLE);
+                        }
+                    }
+                    else
+                    {
+                        response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                        response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+                    }
+                }
+                else
+                {
+                    response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                    response.setMessage(TraceOrgMessageConstants.TOKEN_NOT_RECOGNISED);
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger.error(exception);
+
+                response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+            }
+        }
+        else
+        {
+            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+            response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
+--------------------------------------------------- Solution 1 -------------------------------------------------------------------
+
+
+---------------------------- export PDF ----------------------------------
+
+public ResponseEntity<?> exportPdfSubnetIp(@PathVariable(TraceOrgCommonConstants.ID) String id, HttpServletRequest request)
+    {
+        Response response = new Response();
+
+        if(id != null)
+        {
+            try
+            {
+                String accessToken = request.getHeader(TraceOrgCommonConstants.ACCESSTOKEN);
+
+                if(traceOrgCommonUtil.checkToken(accessToken))
+                {
+                    String[] subnetIpIdString = id.split(",");
+
+                    if(subnetIpIdString.length > 1)
+                    {
+                        String idList = "";
+
+                          if (subnetIpIdString.length > 2)
+                        {
+                            idList = "'" + subnetIpIdString[1];
+                        }
+                        else
+                        {
+                            idList = "'" + subnetIpIdString[1] + "'";
+                        }
+
+                        for (int i = 2; i < subnetIpIdString.length; i++)
+                        {
+                            if (i == subnetIpIdString.length - 1)
+                            {
+                                idList += "', '" + subnetIpIdString[i] + "'";
+                            }
+                            else
+                            {
+                                idList += "', '" + subnetIpIdString[i];
+                            }
+                        }
+                        List<TraceOrgSubnetIpDetails> subnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) this.traceOrgService.commonQuery("",TraceOrgCommonConstants.SELECTED_IP_SUBNET_ID.replace(TraceOrgCommonConstants.SUBNET_ID_VALUE,subnetIpIdString[0]).replace("arrayId", idList));
+
+                        if (subnetIpDetailsList != null && !subnetIpDetailsList.isEmpty())
+                        {
+                            try
+                            {
+                                LinkedHashSet<String> columns = new LinkedHashSet<String>()
+                                {{
+                                    add("IP Address");
+
+                                    add("Status");
+
+                                    add("Scope");
+
+                                    add("Mac Address");
+
+                                    add("Vendor");
+
+                                    add("IP To DNS");
+
+                                    add("DNS To IP");
+
+                                    add("Rogue");
+
+                                    add("Last Alive Time");
+
+                                }};
+
+                                List<HashMap<String, Object>> ipSummaryObject = new ArrayList<>();
+
+                                Integer availableIp = 0;
+
+                                Integer usedIp = 0;
+
+                                Integer transientIp = 0;
+
+                                List<Object> pdfResults = new ArrayList<>();
+
+                                List<Object> pdfResult;
+
+                                String subnetAddress = null;
+
+                                for (TraceOrgSubnetIpDetails traceOrgSubnetIpDetail : subnetIpDetailsList)
+                                {
+                                    if(traceOrgSubnetIpDetail.getStatus().equalsIgnoreCase(TraceOrgCommonConstants.AVAILABLE))
+                                    {
+                                        availableIp++;
+                                    }
+                                    else if(traceOrgSubnetIpDetail.getStatus().equalsIgnoreCase(TraceOrgCommonConstants.USED))
+                                    {
+                                        usedIp++;
+                                    }
+                                    else if(traceOrgSubnetIpDetail.getStatus().equalsIgnoreCase(TraceOrgCommonConstants.TRANSIENT))
+                                    {
+                                        transientIp++;
+                                    }
+
+                                    pdfResult = new ArrayList<>();
+
+                                    subnetAddress = traceOrgSubnetIpDetail.getSubnetId().getSubnetAddress();
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getIpAddress());
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getStatus());
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getSubnetId().getSubnetName());
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getMacAddress());
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getDeviceType());
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getIpToDns());
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getDnsToIp());
+
+                                    if(traceOrgSubnetIpDetail.isRogueStatus())
+                                        pdfResult.add("Yes");
+                                    else
+                                        pdfResult.add("No");
+
+                                    pdfResult.add(traceOrgSubnetIpDetail.getLastAliveTime());
+
+                                    pdfResults.add(pdfResult);
+                                }
+
+                                HashMap<String, Object> results = new HashMap<>();
+
+                                HashMap<String, Object> availableIpSummary = new HashMap<>();
+
+                                availableIpSummary.put("status","Available (%)");
+
+                                availableIpSummary.put("value",new DecimalFormat("#.00").format((double)(availableIp*100)/subnetIpDetailsList.size()));
+
+                                HashMap<String, Object> usedIpSummary = new HashMap<>();
+
+                                usedIpSummary.put("status","Used (%)");
+
+                                usedIpSummary.put("value",new DecimalFormat("#.00").format((double)(usedIp*100)/subnetIpDetailsList.size()));
+
+                                HashMap<String, Object> transientIpSummary = new HashMap<>();
+
+                                transientIpSummary.put("status","Transient (%)");
+
+                                transientIpSummary.put("value",new DecimalFormat("#.00").format((double)(transientIp*100)/subnetIpDetailsList.size()));
+
+                                ipSummaryObject.add(availableIpSummary);
+
+                                ipSummaryObject.add(usedIpSummary);
+
+                                ipSummaryObject.add(transientIpSummary);
+
+                                results.put("ipSummary", ipSummaryObject);
+
+                                results.put("grid-result", pdfResults);
+
+                                results.put("columns", columns);
+
+                                results.put("logFor", "IP_REPORT");
+
+                                List<HashMap<String, Object>> visualizationResults = new ArrayList<>();
+
+                                visualizationResults.add(results);
+
+                                HashMap<String, Object> gridReport = new HashMap<>();
+
+                                gridReport.put("Title", "Subnet IP Details "+TraceOrgCommonConstants.LEFT_SQUARE_BRACKET + subnetAddress + TraceOrgCommonConstants.RIGHT_SQUARE_BRACKET);
+
+                                String fileName = "Subnet IP Details "+TraceOrgCommonConstants.VISUAL_DATE_FORMAT.format(new Date())+".pdf";
+
+                                fileName = fileName.replace(" ","_").replace(":","_").replace(",","");
+
+                                TraceOrgPDFBuilder.addGridReport(1, visualizationResults, new HashMap<String, Object>(), fileName, gridReport);
+
+                                response.setData(fileName);
+
+                                response.setSuccess(TraceOrgCommonConstants.TRUE);
+
+                                response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+                            }
+                            catch (Exception exception)
+                            {
+                                _logger.error(exception);
+
+                                response.setSuccess(TraceOrgCommonConstants.FALSE);
+                            }
+                        }
+                        else
+                        {
+                            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                            response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+
+                            response.setMessage(TraceOrgMessageConstants.NO_DATA_AVAILABLE);
+                        }
+                    }
+                    else
+                    {
+                        response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                        response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+                    }
+                }
+                else
+                {
+                    response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                    response.setMessage(TraceOrgMessageConstants.TOKEN_NOT_RECOGNISED);
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger.error(exception);
+
+                response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+            }
+        }
+        else
+        {
+            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+            response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+---------------------------- export CSV ----------------------------------
+
+public ResponseEntity<?> exportCsvSubnetIp(@PathVariable(TraceOrgCommonConstants.ID) String id, HttpServletRequest request)
+    {
+        Response response = new Response();
+
+        if(id != null)
+        {
+            try
+            {
+                String accessToken = request.getHeader(TraceOrgCommonConstants.ACCESSTOKEN);
+
+                if(traceOrgCommonUtil.checkToken(accessToken))
+                {
+                    String[] subnetIpIdString = id.split(",");
+
+                    if(subnetIpIdString.length > 1)
+                    {
+                        String idList = "'" + subnetIpIdString[1];
+
+                        for (int i = 2; i < subnetIpIdString.length; i++)
+                        {
+                            if (i == subnetIpIdString.length - 1)
+                            {
+                                idList += "', '" + subnetIpIdString[i] + "'";
+                            }
+                            else
+                            {
+                                idList += "', '" + subnetIpIdString[i];
+                            }
+                        }
+
+                        List<TraceOrgSubnetIpDetails> subnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) this.traceOrgService.commonQuery("",TraceOrgCommonConstants.SELECTED_IP_SUBNET_ID.replace(TraceOrgCommonConstants.SUBNET_ID_VALUE,subnetIpIdString[0]).replace(TraceOrgCommonConstants.SUBNET_IP_ID, idList));
+
+                        if (subnetIpDetailsList != null && !subnetIpDetailsList.isEmpty())
+                        {
+                            String url = traceOrgCommonUtil.exportSubnetIpCsv(request,subnetIpDetailsList);
+
+                            response.setSuccess(TraceOrgCommonConstants.TRUE);
+
+                            response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+
+                            response.setData(url);
+                        }
+                        else
+                        {
+                            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                            response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+
+                            response.setMessage(TraceOrgMessageConstants.NO_DATA_AVAILABLE);
+                        }
+                    }
+                    else
+                    {
+                        response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                        response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+                    }
+                }
+                else
+                {
+                    response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                    response.setMessage(TraceOrgMessageConstants.TOKEN_NOT_RECOGNISED);
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger.error(exception);
+
+                response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+            }
+        }
+        else
+        {
+            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+            response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+public String exportSubnetIpCsv(HttpServletRequest request, List<TraceOrgSubnetIpDetails> subnetIpDetailsList)
+    {
+        String fileName = ("Subnet Ip Summary "+subnetIpDetailsList.get(0).getSubnetId().getSubnetAddress()+"_"+TraceOrgCommonConstants.VISUAL_DATE_FORMAT.format(new Date())+".csv").replace(" ","_").replace(":","_").replace(",","");
+
+        try
+        {
+            File file = new File(TraceOrgCommonConstants.CURRENT_DIR +TraceOrgCommonConstants.PATH_SEPARATOR+"Report"+TraceOrgCommonConstants.PATH_SEPARATOR + fileName);
+
+            CsvWriter csvWriter = new CsvWriter();
+
+            Collection<String[]> data = new ArrayList<>();
+
+            data.add(new String[] { "IP Address","Mac Address","Status","IP To Dns","Dns To Ip","Vendor","Rogue","Last Alive Time"});
+
+            for(TraceOrgSubnetIpDetails traceOrgSubnetIpDetails:subnetIpDetailsList)
+            {
+                if(traceOrgSubnetIpDetails.isRogueStatus())
+                {
+                    data.add(new String[] { traceOrgSubnetIpDetails.getIpAddress(), traceOrgSubnetIpDetails.getMacAddress(),traceOrgSubnetIpDetails.getStatus(),traceOrgSubnetIpDetails.getIpToDns(),traceOrgSubnetIpDetails.getDnsToIp(),traceOrgSubnetIpDetails.getDeviceType(),"Yes",traceOrgSubnetIpDetails.getLastAliveTime()});
+                }
+                else
+                {
+                    data.add(new String[] { traceOrgSubnetIpDetails.getIpAddress(), traceOrgSubnetIpDetails.getMacAddress(),traceOrgSubnetIpDetails.getStatus(),traceOrgSubnetIpDetails.getIpToDns(),traceOrgSubnetIpDetails.getDnsToIp(),traceOrgSubnetIpDetails.getDeviceType(),"No",traceOrgSubnetIpDetails.getLastAliveTime()});
+                }
+            }
+
+            csvWriter.write(file, StandardCharsets.UTF_8, data);
+        }
+        catch (Exception exception)
+        {
+            _logger.error(exception);
+        }
+
+        return fileName;
+    }
+
+    
+
+--------------------------------------------------- Solution 2 -------------------------------------------------------------------
+
+---------------------------- export PDF ----------------------------------
+
+public ResponseEntity<?> exportPdfSubnetIp(@PathVariable(TraceOrgCommonConstants.ID) String id, HttpServletRequest request)
+    {
+        Response response = new Response();
+
+        if(id != null)
+        {
+            try
+            {
+                String accessToken = request.getHeader(TraceOrgCommonConstants.ACCESSTOKEN);
+
+                if(traceOrgCommonUtil.checkToken(accessToken))
+                {
+                    String[] subnetIpIdString = id.split(",");
+
+                    if(subnetIpIdString.length > 1)
+                    {
+                        List<List<TraceOrgSubnetIpDetails>> subnetIpDetailsList = new ArrayList<>();
+
+                        List<TraceOrgSubnetIpDetails> subnetIpDetails = new ArrayList<>();
+
+                        for (int i = 1; i < subnetIpIdString.length; i++)
+                        {
+                            subnetIpDetails = (List<TraceOrgSubnetIpDetails>) this.traceOrgService.commonQuery("",TraceOrgCommonConstants.SUBNET_IP_BY_SUBNET_ID.replace(TraceOrgCommonConstants.SUBNET_ID,TraceOrgCommonConstants.SUBNET_IP_ID).replace(TraceOrgCommonConstants.SUBNET_IP_ID_VALUE, subnetIpIdString[i]));
+
+                            subnetIpDetailsList.add(subnetIpDetails);
+                        }
+
+                        if (subnetIpDetailsList != null && !subnetIpDetailsList.isEmpty())
+                        {
+                            try
+                            {
+                                LinkedHashSet<String> columns = new LinkedHashSet<String>()
+                                {{
+                                    add("IP Address");
+
+                                    add("Status");
+
+                                    add("Scope");
+
+                                    add("Mac Address");
+
+                                    add("Vendor");
+
+                                    add("IP To DNS");
+
+                                    add("DNS To IP");
+
+                                    add("Rogue");
+
+                                    add("Last Alive Time");
+
+                                }};
+
+                                List<HashMap<String, Object>> ipSummaryObject = new ArrayList<>();
+
+                                Integer availableIp = 0;
+
+                                Integer usedIp = 0;
+
+                                Integer transientIp = 0;
+
+                                List<Object> pdfResults = new ArrayList<>();
+
+                                List<Object> pdfResult;
+
+                                String subnetAddress = null;
+
+                                for (List<TraceOrgSubnetIpDetails> traceOrgSubnetIpDetailList : subnetIpDetailsList)
+                                {
+                                    for (TraceOrgSubnetIpDetails traceOrgSubnetIpDetail : traceOrgSubnetIpDetailList)
+                                    {
+                                        if(traceOrgSubnetIpDetail.getStatus().equalsIgnoreCase(TraceOrgCommonConstants.AVAILABLE))
+                                        {
+                                            availableIp++;
+                                        }
+                                        else if(traceOrgSubnetIpDetail.getStatus().equalsIgnoreCase(TraceOrgCommonConstants.USED))
+                                        {
+                                            usedIp++;
+                                        }
+                                        else if(traceOrgSubnetIpDetail.getStatus().equalsIgnoreCase(TraceOrgCommonConstants.TRANSIENT))
+                                        {
+                                            transientIp++;
+                                        }
+
+                                        pdfResult = new ArrayList<>();
+
+                                        subnetAddress = traceOrgSubnetIpDetail.getSubnetId().getSubnetAddress();
+
+                                        pdfResult.add(traceOrgSubnetIpDetail.getIpAddress());
+
+                                        pdfResult.add(traceOrgSubnetIpDetail.getStatus());
+
+                                        pdfResult.add(traceOrgSubnetIpDetail.getSubnetId().getSubnetName());
+
+                                        pdfResult.add(traceOrgSubnetIpDetail.getMacAddress());
+
+                                        pdfResult.add(traceOrgSubnetIpDetail.getDeviceType());
+
+                                        pdfResult.add(traceOrgSubnetIpDetail.getIpToDns());
+
+                                        pdfResult.add(traceOrgSubnetIpDetail.getDnsToIp());
+
+                                        if(traceOrgSubnetIpDetail.isRogueStatus())
+                                            pdfResult.add("Yes");
+                                        else
+                                            pdfResult.add("No");
+
+                                        pdfResult.add(traceOrgSubnetIpDetail.getLastAliveTime());
+
+                                        pdfResults.add(pdfResult);
+                                    }
+                                }
+
+                                HashMap<String, Object> results = new HashMap<>();
+
+                                HashMap<String, Object> availableIpSummary = new HashMap<>();
+
+                                availableIpSummary.put("status","Available (%)");
+
+                                availableIpSummary.put("value",new DecimalFormat("#.00").format((double)(availableIp*100)/subnetIpDetailsList.size()));
+
+                                HashMap<String, Object> usedIpSummary = new HashMap<>();
+
+                                usedIpSummary.put("status","Used (%)");
+
+                                usedIpSummary.put("value",new DecimalFormat("#.00").format((double)(usedIp*100)/subnetIpDetailsList.size()));
+
+                                HashMap<String, Object> transientIpSummary = new HashMap<>();
+
+                                transientIpSummary.put("status","Transient (%)");
+
+                                transientIpSummary.put("value",new DecimalFormat("#.00").format((double)(transientIp*100)/subnetIpDetailsList.size()));
+
+                                ipSummaryObject.add(availableIpSummary);
+
+                                ipSummaryObject.add(usedIpSummary);
+
+                                ipSummaryObject.add(transientIpSummary);
+
+                                results.put("ipSummary", ipSummaryObject);
+
+                                results.put("grid-result", pdfResults);
+
+                                results.put("columns", columns);
+
+                                results.put("logFor", "IP_REPORT");
+
+                                List<HashMap<String, Object>> visualizationResults = new ArrayList<>();
+
+                                visualizationResults.add(results);
+
+                                HashMap<String, Object> gridReport = new HashMap<>();
+
+                                gridReport.put("Title", "Subnet IP Details "+TraceOrgCommonConstants.LEFT_SQUARE_BRACKET + subnetAddress + TraceOrgCommonConstants.RIGHT_SQUARE_BRACKET);
+
+                                String fileName = "Subnet IP Details "+TraceOrgCommonConstants.VISUAL_DATE_FORMAT.format(new Date())+".pdf";
+
+                                fileName = fileName.replace(" ","_").replace(":","_").replace(",","");
+
+                                TraceOrgPDFBuilder.addGridReport(1, visualizationResults, new HashMap<String, Object>(), fileName, gridReport);
+
+                                response.setData(fileName);
+
+                                response.setSuccess(TraceOrgCommonConstants.TRUE);
+
+                                response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+                            }
+                            catch (Exception exception)
+                            {
+                                _logger.error(exception);
+
+                                response.setSuccess(TraceOrgCommonConstants.FALSE);
+                            }
+                        }
+                        else
+                        {
+                            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                            response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+
+                            response.setMessage(TraceOrgMessageConstants.NO_DATA_AVAILABLE);
+                        }
+                    }
+                    else
+                    {
+                        response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                        response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+                    }
+                }
+                else
+                {
+                    response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                    response.setMessage(TraceOrgMessageConstants.TOKEN_NOT_RECOGNISED);
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger.error(exception);
+
+                response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+            }
+        }
+        else
+        {
+            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+            response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+---------------------------- export CSV ----------------------------------
+
+public ResponseEntity<?> exportCsvSubnetIp(@PathVariable(TraceOrgCommonConstants.ID) String id, HttpServletRequest request)
+    {
+        Response response = new Response();
+
+        if(id != null)
+        {
+            try
+            {
+                String accessToken = request.getHeader(TraceOrgCommonConstants.ACCESSTOKEN);
+
+                if(traceOrgCommonUtil.checkToken(accessToken))
+                {
+                    String[] subnetIpIdString = id.split(",");
+
+                    if(subnetIpIdString.length > 1)
+                    {
+                        List<List<TraceOrgSubnetIpDetails>> subnetIpDetailsList = new ArrayList<>();
+
+                        List<TraceOrgSubnetIpDetails> subnetIpDetails = new ArrayList<>();
+
+                        for (int i = 1; i < subnetIpIdString.length; i++)
+                        {
+                            subnetIpDetails = (List<TraceOrgSubnetIpDetails>) this.traceOrgService.commonQuery("",TraceOrgCommonConstants.SUBNET_IP_BY_SUBNET_ID.replace(TraceOrgCommonConstants.SUBNET_ID,TraceOrgCommonConstants.SUBNET_IP_ID).replace(TraceOrgCommonConstants.SUBNET_IP_ID_VALUE, subnetIpIdString[i]));
+
+                            subnetIpDetailsList.add(subnetIpDetails);
+                        }
+
+                        if (subnetIpDetailsList != null && !subnetIpDetailsList.isEmpty())
+                        {
+                            String url = traceOrgCommonUtil.exportSubnetIpCsv(request,subnetIpDetailsList);
+
+                            response.setSuccess(TraceOrgCommonConstants.TRUE);
+
+                            response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+
+                            response.setData(url);
+                        }
+                        else
+                        {
+                            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                            response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+
+                            response.setMessage(TraceOrgMessageConstants.NO_DATA_AVAILABLE);
+                        }
+                    }
+                    else
+                    {
+                        response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                        response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+                    }
+                }
+                else
+                {
+                    response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                    response.setMessage(TraceOrgMessageConstants.TOKEN_NOT_RECOGNISED);
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger.error(exception);
+
+                response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+            }
+        }
+        else
+        {
+            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+            response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+public String exportSubnetIpCsv(HttpServletRequest request, List<List<TraceOrgSubnetIpDetails>> subnetIpDetailsList)
+    {
+        String fileName = ("Subnet Ip Summary "+subnetIpDetailsList.get(0).get(0).getSubnetId().getSubnetAddress()+"_"+TraceOrgCommonConstants.VISUAL_DATE_FORMAT.format(new Date())+".csv").replace(" ","_").replace(":","_").replace(",","");
+
+        try
+        {
+            File file = new File(TraceOrgCommonConstants.CURRENT_DIR +TraceOrgCommonConstants.PATH_SEPARATOR+"Report"+TraceOrgCommonConstants.PATH_SEPARATOR + fileName);
+
+            CsvWriter csvWriter = new CsvWriter();
+
+            Collection<String[]> data = new ArrayList<>();
+
+            data.add(new String[] { "IP Address","Mac Address","Status","IP To Dns","Dns To Ip","Vendor","Rogue","Last Alive Time"});
+
+            for(List<TraceOrgSubnetIpDetails> traceOrgSubnetIpDetailsList:subnetIpDetailsList)
+            {
+                for (TraceOrgSubnetIpDetails traceOrgSubnetIpDetails : traceOrgSubnetIpDetailsList)
+                {
+                    if(traceOrgSubnetIpDetails.isRogueStatus())
+                    {
+                        data.add(new String[] { traceOrgSubnetIpDetails.getIpAddress(), traceOrgSubnetIpDetails.getMacAddress(),traceOrgSubnetIpDetails.getStatus(),traceOrgSubnetIpDetails.getIpToDns(),traceOrgSubnetIpDetails.getDnsToIp(),traceOrgSubnetIpDetails.getDeviceType(),"Yes",traceOrgSubnetIpDetails.getLastAliveTime()});
+                    }
+                    else
+                    {
+                        data.add(new String[] { traceOrgSubnetIpDetails.getIpAddress(), traceOrgSubnetIpDetails.getMacAddress(),traceOrgSubnetIpDetails.getStatus(),traceOrgSubnetIpDetails.getIpToDns(),traceOrgSubnetIpDetails.getDnsToIp(),traceOrgSubnetIpDetails.getDeviceType(),"No",traceOrgSubnetIpDetails.getLastAliveTime()});
+                    }
+                }
+            }
+
+            csvWriter.write(file, StandardCharsets.UTF_8, data);
+        }
+        catch (Exception exception)
+        {
+            _logger.error(exception);
+        }
+
+        return fileName;
+    }
+
+
+
+--------------------------------------------------- Solution 3 -------------------------------------------------------------------
+
+---------------------------- export PDF ----------------------------------
+
+public ResponseEntity<?> exportPdfSubnetIp(@PathVariable(TraceOrgCommonConstants.ID) String id, HttpServletRequest request)
+    {
+        Response response = new Response();
+
+        if(id != null)
+        {
+            try
+            {
+                String accessToken = request.getHeader(TraceOrgCommonConstants.ACCESSTOKEN);
+
+                if(traceOrgCommonUtil.checkToken(accessToken))
+                {
+                    String[] subnetIpIdString = id.split(",");
+
+                    if(subnetIpIdString.length > 1)
+                    {
+                        List<TraceOrgSubnetIpDetails> subnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) this.traceOrgService.commonQuery("",TraceOrgCommonConstants.SUBNET_IP_BY_SUBNET_ID.replace(TraceOrgCommonConstants.SUBNET_ID_VALUE,subnetIpIdString[0]));
+
+                        List<String> temporySubnetDetailsList = new ArrayList<>();
+
+                        for (int i = 0; i < subnetIpIdString.length; i++)
+                        {
+                            temporySubnetDetailsList.add(subnetIpIdString[i]);
+                        }
+
+                        if (subnetIpDetailsList != null && !subnetIpDetailsList.isEmpty())
+                        {
+                            try
+                            {
+                                LinkedHashSet<String> columns = new LinkedHashSet<String>()
+                                {{
+                                    add("IP Address");
+
+                                    add("Status");
+
+                                    add("Scope");
+
+                                    add("Mac Address");
+
+                                    add("Vendor");
+
+                                    add("IP To DNS");
+
+                                    add("DNS To IP");
+
+                                    add("Rogue");
+
+                                    add("Last Alive Time");
+
+                                }};
+
+                                List<HashMap<String, Object>> ipSummaryObject = new ArrayList<>();
+
+                                int i = 1;
+
+                                Integer availableIp = 0;
+
+                                Integer usedIp = 0;
+
+                                Integer transientIp = 0;
+
+                                List<Object> pdfResults = new ArrayList<>();
+
+                                List<Object> pdfResult;
+
+                                String subnetAddress = null;
+
+                                for (TraceOrgSubnetIpDetails traceOrgSubnetIpDetail : subnetIpDetailsList)
+                                {
+                                    long selectedIpId = 0;
+
+                                    if (i < temporySubnetDetailsList.size())
+                                    {
+                                        selectedIpId = Long.parseLong(temporySubnetDetailsList.get(i));
+
+                                        if (traceOrgSubnetIpDetail.getId().equals(selectedIpId))
+                                        {
+                                            if(traceOrgSubnetIpDetail.getStatus().equalsIgnoreCase(TraceOrgCommonConstants.AVAILABLE))
+                                            {
+                                                availableIp++;
+                                            }
+                                            else if(traceOrgSubnetIpDetail.getStatus().equalsIgnoreCase(TraceOrgCommonConstants.USED))
+                                            {
+                                                usedIp++;
+                                            }
+                                            else if(traceOrgSubnetIpDetail.getStatus().equalsIgnoreCase(TraceOrgCommonConstants.TRANSIENT))
+                                            {
+                                                transientIp++;
+                                            }
+
+                                            pdfResult = new ArrayList<>();
+
+                                            subnetAddress = traceOrgSubnetIpDetail.getSubnetId().getSubnetAddress();
+
+                                            pdfResult.add(traceOrgSubnetIpDetail.getIpAddress());
+
+                                            pdfResult.add(traceOrgSubnetIpDetail.getStatus());
+
+                                            pdfResult.add(traceOrgSubnetIpDetail.getSubnetId().getSubnetName());
+
+                                            pdfResult.add(traceOrgSubnetIpDetail.getMacAddress());
+
+                                            pdfResult.add(traceOrgSubnetIpDetail.getDeviceType());
+
+                                            pdfResult.add(traceOrgSubnetIpDetail.getIpToDns());
+
+                                            pdfResult.add(traceOrgSubnetIpDetail.getDnsToIp());
+
+                                            if(traceOrgSubnetIpDetail.isRogueStatus())
+                                                pdfResult.add("Yes");
+                                            else
+                                                pdfResult.add("No");
+
+                                            pdfResult.add(traceOrgSubnetIpDetail.getLastAliveTime());
+
+                                            pdfResults.add(pdfResult);
+
+                                            i++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
+                                }
+
+                                HashMap<String, Object> results = new HashMap<>();
+
+                                HashMap<String, Object> availableIpSummary = new HashMap<>();
+
+                                availableIpSummary.put("status","Available (%)");
+
+                                availableIpSummary.put("value",new DecimalFormat("#.00").format((double)(availableIp*100)/(temporySubnetDetailsList.size() - 1)));
+
+                                HashMap<String, Object> usedIpSummary = new HashMap<>();
+
+                                usedIpSummary.put("status","Used (%)");
+
+                                usedIpSummary.put("value",new DecimalFormat("#.00").format((double)(usedIp*100)/(temporySubnetDetailsList.size() - 1)));
+
+                                HashMap<String, Object> transientIpSummary = new HashMap<>();
+
+                                transientIpSummary.put("status","Transient (%)");
+
+                                transientIpSummary.put("value",new DecimalFormat("#.00").format((double)(transientIp*100)/(temporySubnetDetailsList.size() - 1)));
+
+                                ipSummaryObject.add(availableIpSummary);
+
+                                ipSummaryObject.add(usedIpSummary);
+
+                                ipSummaryObject.add(transientIpSummary);
+
+                                results.put("ipSummary", ipSummaryObject);
+
+                                results.put("grid-result", pdfResults);
+
+                                results.put("columns", columns);
+
+                                results.put("logFor", "IP_REPORT");
+
+                                List<HashMap<String, Object>> visualizationResults = new ArrayList<>();
+
+                                visualizationResults.add(results);
+
+                                HashMap<String, Object> gridReport = new HashMap<>();
+
+                                gridReport.put("Title", "Subnet IP Details "+TraceOrgCommonConstants.LEFT_SQUARE_BRACKET + subnetAddress + TraceOrgCommonConstants.RIGHT_SQUARE_BRACKET);
+
+                                String fileName = "Subnet IP Details "+TraceOrgCommonConstants.VISUAL_DATE_FORMAT.format(new Date())+".pdf";
+
+                                fileName = fileName.replace(" ","_").replace(":","_").replace(",","");
+
+                                TraceOrgPDFBuilder.addGridReport(1, visualizationResults, new HashMap<String, Object>(), fileName, gridReport);
+
+                                response.setData(fileName);
+
+                                response.setSuccess(TraceOrgCommonConstants.TRUE);
+
+                                response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+                            }
+                            catch (Exception exception)
+                            {
+                                _logger.error(exception);
+
+                                response.setSuccess(TraceOrgCommonConstants.FALSE);
+                            }
+                        }
+                        else
+                        {
+                            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                            response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+
+                            response.setMessage(TraceOrgMessageConstants.NO_DATA_AVAILABLE);
+                        }
+                    }
+                    else
+                    {
+                        response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                        response.setMessage(TraceOrgMessageConstants.NO_DATA_AVAILABLE);
+                    }
+                }
+                else
+                {
+                    response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                    response.setMessage(TraceOrgMessageConstants.TOKEN_NOT_RECOGNISED);
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger.error(exception);
+
+                response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+            }
+        }
+        else
+        {
+            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+            response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }	
+
+
+---------------------------- export CSV ----------------------------------
+
+public ResponseEntity<?> exportCsvSubnetIp(@PathVariable(TraceOrgCommonConstants.ID) String id, HttpServletRequest request)
+    {
+        Response response = new Response();
+
+        if(id != null)
+        {
+            try
+            {
+                String accessToken = request.getHeader(TraceOrgCommonConstants.ACCESSTOKEN);
+
+                if(traceOrgCommonUtil.checkToken(accessToken))
+                {
+                    String[] subnetIpIdString = id.split(",");
+
+                    if(subnetIpIdString.length > 1)
+                    {
+                        List<TraceOrgSubnetIpDetails> subnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) this.traceOrgService.commonQuery("",TraceOrgCommonConstants.SUBNET_IP_BY_SUBNET_ID.replace(TraceOrgCommonConstants.SUBNET_ID_VALUE,subnetIpIdString[0]));
+
+                        List<String> temporySubnetDetailsList = new ArrayList<>();
+
+                        for (int i = 0; i < subnetIpIdString.length; i++)
+                        {
+                            temporySubnetDetailsList.add(subnetIpIdString[i]);
+                        }
+
+                        if (subnetIpDetailsList != null && !subnetIpDetailsList.isEmpty())
+                        {
+                            String url = traceOrgCommonUtil.exportSubnetIpCsv(request,subnetIpDetailsList, temporySubnetDetailsList);
+
+                            response.setSuccess(TraceOrgCommonConstants.TRUE);
+
+                            response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+
+                            response.setData(url);
+                        }
+                        else
+                        {
+                            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                            response.setCurrentUserRole(traceOrgCommonUtil.currentUserRole(accessToken));
+
+                            response.setMessage(TraceOrgMessageConstants.NO_DATA_AVAILABLE);
+                        }
+                    }
+                    else
+                    {
+                        response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                        response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+                    }
+                }
+                else
+                {
+                    response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                    response.setMessage(TraceOrgMessageConstants.TOKEN_NOT_RECOGNISED);
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger.error(exception);
+
+                response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+            }
+        }
+        else
+        {
+            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+            response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+public String exportSubnetIpCsv(HttpServletRequest request, List<TraceOrgSubnetIpDetails> subnetIpDetailsList, List<String> temporySubnetDetailsList)
+    {
+        String fileName = ("Subnet Ip Summary "+subnetIpDetailsList.get(0).getSubnetId().getSubnetAddress()+"_"+TraceOrgCommonConstants.VISUAL_DATE_FORMAT.format(new Date())+".csv").replace(" ","_").replace(":","_").replace(",","");
+
+        try
+        {
+            File file = new File(TraceOrgCommonConstants.CURRENT_DIR +TraceOrgCommonConstants.PATH_SEPARATOR+"Report"+TraceOrgCommonConstants.PATH_SEPARATOR + fileName);
+
+            CsvWriter csvWriter = new CsvWriter();
+
+            Collection<String[]> data = new ArrayList<>();
+
+            data.add(new String[] { "IP Address","Mac Address","Status","IP To Dns","Dns To Ip","Vendor","Rogue","Last Alive Time"});
+
+            int i = 1;
+
+            for(TraceOrgSubnetIpDetails traceOrgSubnetIpDetails:subnetIpDetailsList)
+            {
+                long selectedIpId = 0;
+
+                if (i < temporySubnetDetailsList.size())
+                {
+                    selectedIpId = Long.parseLong(temporySubnetDetailsList.get(i));
+
+                    if (traceOrgSubnetIpDetails.getId().equals(selectedIpId))
+                    {
+                        if(traceOrgSubnetIpDetails.isRogueStatus())
+                        {
+                            data.add(new String[] { traceOrgSubnetIpDetails.getIpAddress(), traceOrgSubnetIpDetails.getMacAddress(),traceOrgSubnetIpDetails.getStatus(),traceOrgSubnetIpDetails.getIpToDns(),traceOrgSubnetIpDetails.getDnsToIp(),traceOrgSubnetIpDetails.getDeviceType(),"Yes",traceOrgSubnetIpDetails.getLastAliveTime()});
+                        }
+                        else
+                        {
+                            data.add(new String[] { traceOrgSubnetIpDetails.getIpAddress(), traceOrgSubnetIpDetails.getMacAddress(),traceOrgSubnetIpDetails.getStatus(),traceOrgSubnetIpDetails.getIpToDns(),traceOrgSubnetIpDetails.getDnsToIp(),traceOrgSubnetIpDetails.getDeviceType(),"No",traceOrgSubnetIpDetails.getLastAliveTime()});
+                        }
+
+                        i++;
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            csvWriter.write(file, StandardCharsets.UTF_8, data);
+        }
+        catch (Exception exception)
+        {
+            _logger.error(exception);
+        }
+
+        return fileName;
+    }
+
+
+
+-------------------------------------------------------- IPAM-124 ------------------------------------------------------------------------
+
+------------------------------------------------------------- Before Bug -------------------------------------------------------
+
+
+@RequestMapping(value = TraceOrgCommonConstants.UPDATE_SUBNET_IP_RANGE_REST_URL, method = RequestMethod.POST)
+    public ResponseEntity<?> updateSubnetIpRange(HttpServletRequest request, @RequestParam String startIp , @RequestParam String endIp, @RequestParam String status, @RequestParam Long subnetId)
+    {
+        Response response = new Response();
+
+        if(status != null && !status.isEmpty() && startIp != null && !startIp.isEmpty() && endIp != null && !endIp.isEmpty() && subnetId !=null && (status.equalsIgnoreCase("USED") || status.equalsIgnoreCase("Available") || status.equalsIgnoreCase("Reserved") || status.equalsIgnoreCase("Transient")))
+        {
+            try
+            {
+                String accessToken = request.getHeader(TraceOrgCommonConstants.ACCESSTOKEN);
+
+                if (traceOrgCommonUtil.checkToken(accessToken))
+                {
+
+                    if(traceOrgCommonUtil.currentUserRole(accessToken).equals(TraceOrgCommonConstants.ROLE_ADMIN))
+                    {
+                        TraceOrgSubnetDetails traceOrgSubnetDetail = (TraceOrgSubnetDetails)this.traceOrgService.getById(TraceOrgCommonConstants.TRACE_ORG_SUBNET_DETAILS,subnetId);
+
+                        if(traceOrgSubnetDetail != null)
+                        {
+                            if( this.traceOrgCommonUtil.isValidIp(traceOrgSubnetDetail,startIp) &&  this.traceOrgCommonUtil.isValidIp(traceOrgSubnetDetail,endIp))
+                            {
+
+                                if(Long.parseLong(startIp.substring(startIp.lastIndexOf(".")+ 1,startIp.length())) < Long.parseLong(endIp.substring(endIp.lastIndexOf(".")+1,endIp.length())))
+                                {
+                                    Long startIpId = 0L;
+
+                                    Long endIpId = 0L;
+
+                                    List<TraceOrgSubnetIpDetails> traceOrgSubnetIpDetailsStartList = (List<TraceOrgSubnetIpDetails>)this.traceOrgService.commonQuery("",TraceOrgCommonConstants.SUBNET_IP_DETAILS_BY_IP_ADDRESS.replace(TraceOrgCommonConstants.IP_ADDRESS_VALUE,startIp)+ " and subnetId = '"+subnetId+"'");
+
+                                    if(traceOrgSubnetIpDetailsStartList != null && !traceOrgSubnetIpDetailsStartList.isEmpty())
+                                    {
+                                        startIpId = traceOrgSubnetIpDetailsStartList.get(0).getId();
+
+                                    }
+                                    List<TraceOrgSubnetIpDetails> traceOrgSubnetIpDetailsEndList = (List<TraceOrgSubnetIpDetails>)this.traceOrgService.commonQuery("",TraceOrgCommonConstants.SUBNET_IP_DETAILS_BY_IP_ADDRESS.replace(TraceOrgCommonConstants.IP_ADDRESS_VALUE,endIp) + " and subnetId = '"+subnetId+"'");
+
+                                    if(traceOrgSubnetIpDetailsEndList !=null && !traceOrgSubnetIpDetailsEndList.isEmpty())
+                                    {
+                                        endIpId = traceOrgSubnetIpDetailsEndList.get(0).getId();
+                                    }
+
+                                    if(startIpId > 0  && endIpId > 0)
+                                    {
+                                        for(; startIpId <= endIpId ; startIpId++)
+                                        {
+                                            TraceOrgSubnetIpDetails traceOrgSubnetIpDetails = (TraceOrgSubnetIpDetails)this.traceOrgService.getById(TraceOrgCommonConstants.TRACE_ORG_SUBNET_IP_DETAILS,startIpId);
+
+                                            switch(status.toUpperCase())
+                                            {
+                                                case "USED" :
+                                                    traceOrgSubnetIpDetails.setStatus(TraceOrgCommonConstants.USED);
+                                                    break;
+                                                case "TRANSIENT" :
+                                                    traceOrgSubnetIpDetails.setStatus(TraceOrgCommonConstants.TRANSIENT);
+                                                    break;
+                                                case "AVAILABLE" :
+                                                    traceOrgSubnetIpDetails.setStatus(TraceOrgCommonConstants.AVAILABLE);
+                                                    break;
+                                                case "RESERVED" :
+                                                    traceOrgSubnetIpDetails.setStatus(TraceOrgCommonConstants.RESERVED);
+                                                    break;
+                                                default:
+                                                    traceOrgSubnetIpDetails.setStatus(null);
+                                                    break;
+                                            }
+                                            if(traceOrgSubnetIpDetails.getStatus() !=null)
+                                            {
+                                                traceOrgSubnetIpDetails.setModifiedDate(new Date());
+
+                                                this.traceOrgService.insert(traceOrgSubnetIpDetails);
+                                            }
+                                        }
+
+                                        List<TraceOrgSubnetIpDetails> totalSubnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) traceOrgService.commonQuery(TraceOrgCommonConstants.TRACE_ORG_SUBNET_IP_DETAILS +" where subnetId = '"+traceOrgSubnetDetail.getId()+"' and  deactiveStatus = false");
+
+                                        List<TraceOrgSubnetIpDetails> availableSubnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) traceOrgService.commonQuery(TraceOrgCommonConstants.SUBNET_IP_DETAILS_BY_STATUS_AND_SUBNET_ID.replace(TraceOrgCommonConstants.STATUS_VALUE,TraceOrgCommonConstants.AVAILABLE).replace(TraceOrgCommonConstants.SUBNET_ID_VALUE, TraceOrgCommonUtil.getStringValue(traceOrgSubnetDetail.getId()))+" and deactiveStatus = false");
+
+                                        List<TraceOrgSubnetIpDetails> usedSubnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) traceOrgService.commonQuery(TraceOrgCommonConstants.SUBNET_IP_DETAILS_BY_STATUS_AND_SUBNET_ID.replace(TraceOrgCommonConstants.STATUS_VALUE,TraceOrgCommonConstants.USED).replace(TraceOrgCommonConstants.SUBNET_ID_VALUE,TraceOrgCommonUtil.getStringValue(traceOrgSubnetDetail.getId())) +" and deactiveStatus = false");
+
+                                        List<TraceOrgSubnetIpDetails> transientSubnetIpDetailsList = (List<TraceOrgSubnetIpDetails>) traceOrgService.commonQuery(TraceOrgCommonConstants.SUBNET_IP_DETAILS_BY_STATUS_AND_SUBNET_ID.replace(TraceOrgCommonConstants.STATUS_VALUE,TraceOrgCommonConstants.TRANSIENT).replace(TraceOrgCommonConstants.SUBNET_ID_VALUE,TraceOrgCommonUtil.getStringValue(traceOrgSubnetDetail.getId())) +" and deactiveStatus = false");
+
+                                        traceOrgSubnetDetail.setAvailableIp((long) availableSubnetIpDetailsList.size());
+
+                                        traceOrgSubnetDetail.setUsedIp((long) usedSubnetIpDetailsList.size());
+
+                                        traceOrgSubnetDetail.setTransientIp((long) transientSubnetIpDetailsList.size());
+
+                                        traceOrgSubnetDetail.setTotalIp((long)totalSubnetIpDetailsList.size());
+
+                                        traceOrgService.insert(traceOrgSubnetDetail);
+
+                                        response.setSuccess(TraceOrgCommonConstants.TRUE);
+
+                                        response.setMessage(TraceOrgMessageConstants.SUBNET_IP_UPDATE_SUCCESS);
+                                    }
+                                    else
+                                    {
+                                        response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                                        response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+                                    }
+                                }
+                                else
+                                {
+                                    response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                                    response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+                                }
+
+                            }
+                            else
+                            {
+                                response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                                response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+                            }
+
+                        }
+                        else
+                        {
+                            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                            response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+                        }
+                    }
+                    else
+                    {
+                        response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                        response.setMessage(TraceOrgMessageConstants.DO_NOT_HAVE_ACCESS);
+                    }
+                }
+                else
+                {
+                    response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                    response.setMessage(TraceOrgMessageConstants.TOKEN_NOT_RECOGNISED);
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger.error(exception);
+
+                response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+                response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+            }
+        }
+        else
+        {
+            response.setSuccess(TraceOrgCommonConstants.FALSE);
+
+            response.setMessage(TraceOrgMessageConstants.ENTER_VALID_DETAILS);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+List<TraceOrgSubnetIpDetails> traceOrgSubnetIpDetailsEndList = (List<TraceOrgSubnetIpDetails>)this.traceOrgService.commonQuery("",TraceOrgCommonConstants.SUBNET_IP_DETAILS_BY_IP_ADDRESS.replace(TraceOrgCommonConstants.IP_ADDRESS_VALUE,endIp) + " and subnetId = '"+subnetId+"'");
+
+                                    if(traceOrgSubnetIpDetailsEndList !=null && !traceOrgSubnetIpDetailsEndList.isEmpty())
+                                    {
+                                        endIpId = traceOrgSubnetIpDetailsEndList.get(0).getId();
+                                    }
+
+
+--------------------------------------------------------------- Solution 1 -------------------------------------------------------
+
+public Set<String> getIPRange(String startIp, String endIp)
+    {
+        Set<String> rangeIpList = new HashSet<>();
+
+        String[] startIpOctet = startIp.split(".");
+
+        String[] endIpOctet = endIp.split(".");
+
+        try
+        {
+            if (startIpOctet[0] == endIpOctet[0] && startIpOctet[1] == endIpOctet[1] && startIpOctet[2] == endIpOctet[2])
+            {
+                IPAddress lowerRange = new IPAddressString(startIp).toAddress();
+
+                String ip;
+
+                int start = Integer.parseInt(startIpOctet[3]);
+
+                for (int index = start; index <= endIpOctet.length; index++)
+                {
+                    ip = startIpOctet[0] + "." + startIpOctet[1] + "." + startIpOctet[2] + "." + index;
+
+                    rangeIpList.add(ip);
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.error(exception);
+        }
+
+        return rangeIpList;
+    }

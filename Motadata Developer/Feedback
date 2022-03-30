@@ -1,0 +1,30 @@
+java -jar h2-1.4.192.jar -webAllowOthers -tcpAllowOthers -baseDir /home/smit/Downloads/Database/h2/
+java -jar h2-1.4.192.jar -baseDir /home/smit/Downloads/Database/h2/
+
+webAllowOthers : if you use it, always guard your ports with a firewall or some other solution and use such combination of settings only in trusted networks.
+
+-ifNotExists
+
+java -jar /home/smit/Documents/Server/Jetty/jetty-distribution-9.4.44.v20210927/start.jar -jetty.http.port=8080
+
+java -jar start.jar
+
+
+ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
+
+                channel.setOutputStream(responseStream);
+
+System.out.println(responseStream);
+
+System.out.println(responseStream.toByteArray());
+
+System.out.println(new String(responseStream.toByteArray()));
+
+ while (channel.isConnected()) // instead of wait parameter
+                {
+                    Thread.sleep(100);
+                }
+
+java.lang.UNIXProcess@1b2c6ec2
+java.lang.UNIXProcess$ProcessPipeInputStream@4edde6e5
+java.io.InputStreamReader@70177ecd
